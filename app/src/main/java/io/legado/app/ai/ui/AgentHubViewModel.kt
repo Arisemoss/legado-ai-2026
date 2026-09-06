@@ -1,5 +1,6 @@
 package io.legado.app.ai.ui
 
+import splitties.init.appCtx
 import io.legado.app.data.appDb
 import io.legado.app.ai.AiPlatform
 import io.legado.app.ai.log.AiLog
@@ -80,7 +81,7 @@ class AgentHubViewModel(
 ) {
 
     private fun windowSize(): Int =
-        App.INSTANCE.getPrefString(PreferKey.aiSessionWindow)?.toIntOrNull() ?: 50
+        appCtx.getPrefString(PreferKey.aiSessionWindow)?.toIntOrNull() ?: 50
 
     private val conversation by lazy { ConversationService(window = windowSize()) }
     private val runtime get() = AiPlatform.runtime
@@ -95,7 +96,7 @@ class AgentHubViewModel(
     private val systemPrompt by lazy {
         val defaultProtocol = AiModelConfig.PROTOCOL_AUTO
         val protocol =
-            App.INSTANCE.getPrefString(PreferKey.aiToolProtocol, defaultProtocol) ?: defaultProtocol
+            appCtx.getPrefString(PreferKey.aiToolProtocol, defaultProtocol) ?: defaultProtocol
         SystemPromptBuilder(
             SkillRegistry(),
             if (protocol == AiModelConfig.PROTOCOL_NATIVE) null else AiPlatform.registry

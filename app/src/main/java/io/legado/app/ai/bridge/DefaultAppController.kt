@@ -13,7 +13,7 @@ class DefaultAppController : AppController {
 
     override suspend fun listShelf(keyword: String?): List<Map<String, Any>> =
         withContext(Dispatchers.IO) {
-            val dao = appDb.bookDao()
+            val dao = appDb.bookDao
             // 注意：不能用 LiveData.value（无活跃观察者时恒为 null），这里取全量后内存过滤
             val books = if (keyword.isNullOrBlank()) {
                 dao.all
@@ -37,7 +37,7 @@ class DefaultAppController : AppController {
 
     override suspend fun locateBook(bookName: String): Map<String, Any> =
         withContext(Dispatchers.IO) {
-            val book = appDb.bookDao().findByName(bookName).firstOrNull()
+            val book = appDb.bookDao.findByName(bookName).firstOrNull()
             if (book == null) {
                 emptyMap()
             } else {
@@ -51,18 +51,18 @@ class DefaultAppController : AppController {
 
     override suspend fun removeFromShelf(bookName: String): Map<String, Any> =
         withContext(Dispatchers.IO) {
-            val hit = appDb.bookDao().findByName(bookName).firstOrNull()
+            val hit = appDb.bookDao.findByName(bookName).firstOrNull()
             if (hit == null) {
                 mapOf("ok" to false, "message" to "书架中未找到《$bookName》")
             } else {
-                appDb.bookDao().delete(hit)
+                appDb.bookDao.delete(hit)
                 mapOf("ok" to true, "message" to "已将《${hit.name}》移出书架")
             }
         }
 
     override suspend fun enableSource(url: String, enabled: Boolean): Map<String, Any> =
         withContext(Dispatchers.IO) {
-            val dao = appDb.bookSourceDao()
+            val dao = appDb.bookSourceDao
             val source = dao.getBookSource(url)
             if (source == null) {
                 mapOf("ok" to false, "message" to "书源不存在: $url")

@@ -1,5 +1,6 @@
 package io.legado.app.ai.runtime
 
+import splitties.init.appCtx
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -65,7 +66,7 @@ object AgentTaskCenter {
     private val listeners = java.util.concurrent.CopyOnWriteArrayList<FinishListener>()
 
     private fun windowSize(): Int =
-        App.INSTANCE.getPrefString(PreferKey.aiSessionWindow)?.toIntOrNull() ?: 50
+        appCtx.getPrefString(PreferKey.aiSessionWindow)?.toIntOrNull() ?: 50
 
     fun isBusy(): Boolean = job?.isActive == true
 
@@ -147,7 +148,7 @@ object AgentTaskCenter {
         val elapsed = System.currentTimeMillis() - snapshot.startedAt
         if (elapsed < 3_000L) return
         runCatching {
-            val ctx = App.INSTANCE
+            val ctx = appCtx
             val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 nm.createNotificationChannel(

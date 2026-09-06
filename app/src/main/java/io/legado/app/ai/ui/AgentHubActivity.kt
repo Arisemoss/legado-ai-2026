@@ -187,7 +187,7 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
     // ---------- 状态订阅 ----------
 
     private fun initVm() {
-        vm.attach(this)
+        vm.attach(lifecycleScope)
         uiJobs += lifecycleScope.launch {
             var lastRendered: List<ChatRow>? = null
             var lastBusy: Boolean? = null

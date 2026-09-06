@@ -35,7 +35,7 @@ class DefaultSourceRuleWriter : SourceRuleWriter {
     override suspend fun apply(url: String, changes: Map<String, String>): Boolean =
         withContext(Dispatchers.IO) {
             runCatching {
-                val dao = appDb.bookSourceDao()
+                val dao = appDb.bookSourceDao
                 val source = dao.getBookSource(url) ?: return@withContext false
                 val gson = Gson()
                 val root = JsonParser.parseString(gson.toJson(source)).asJsonObject

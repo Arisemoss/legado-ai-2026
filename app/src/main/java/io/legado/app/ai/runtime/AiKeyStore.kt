@@ -1,5 +1,6 @@
 package io.legado.app.ai.runtime
 
+import splitties.init.appCtx
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -30,7 +31,7 @@ object AiKeyStore {
     private const val ENC_KEY = "ai_api_key_enc"
 
     fun getApiKey(): String {
-        App.INSTANCE.getPrefString(ENC_KEY)?.let { enc ->
+        appCtx.getPrefString(ENC_KEY)?.let { enc ->
             if (enc.isNotBlank()) {
                 decrypt(enc)?.let { return it }
                 // 解密失败，回退明本（可能为不可用主密钥遗留数据）
@@ -38,18 +39,18 @@ object AiKeyStore {
             }
         }
         // 无密文：读明文；明文有效则顺手迁移加密（自愈历史数据，如设置页直写或旧版本遗留）
-        val plain = App.INSTANCE.getPrefString(PreferKey.aiApiKey).orEmpty()
+        val plain = appCtx.getPrefString(PreferKey.aiApiKey).orEmpty()
         if (plain.isBlank()) return ""
         encrypt(plain)?.let { enc ->
-            App.INSTANCE.putPrefString(ENC_KEY, enc)
-            App.INSTANCE.putPrefString(PreferKey.aiApiKey, "")
+            appCtx.putPrefString(ENC_KEY, enc)
+            appCtx.putPrefString(PreferKey.aiApiKey, "")
             AiLog.i("KeyStore", "已将明文 API Key 迁移至加密存储")
         }
         return plain
     }
 
     fun putApiKey(value: String) {
-        val ctx = App.INSTANCE
+        val ctx = appCtx
         if (value.isBlank()) {
             ctx.putPrefString(ENC_KEY, "")
             ctx.putPrefString(PreferKey.aiApiKey, "")

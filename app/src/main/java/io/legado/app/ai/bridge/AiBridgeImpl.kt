@@ -8,9 +8,7 @@ import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.help.book.BookHelp
 import io.legado.app.model.webBook.WebBook
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -18,9 +16,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
-
-/** 桥接层共享 IO 协程域：WebBook 调用复用同一 scope，避免每次调用新建永不取消的协程域 */
-private val bridgeIoScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
 /**
  * [BookFetcher] 默认实现：跨已启用书源**并行**搜索（单源 8s 超时），
@@ -37,7 +32,7 @@ class DefaultBookFetcher : BookFetcher {
         withContext(Dispatchers.IO) {
             val seen = HashSet<String>()
             // 随机抽取而非固定头部源：避免搜索结果系统性偏向 customOrder 靠前的书源
-            val sources = appDb.bookSourceDao().allEnabled
+            val sources = appDb.bookSourceDao.allEnabled
                 .filter { !it.searchUrl.isNullOrBlank() }
                 .shuffled()
                 .take(MAX_SOURCES)
@@ -53,8 +48,8 @@ class DefaultBookFetcher : BookFetcher {
                         val s = System.currentTimeMillis()
                         try {
                             val r = withTimeoutOrNull(PER_SOURCE_TIMEOUT_MS) {
-                                WebBook(source).searchBookSuspend(
-                                    scope = bridgeIoScope,
+                                WebBook.searchBookAwait(
+                                    bookSource = source,
                                     key = keyword,
                                     page = 1
                                 )
@@ -103,7 +98,7 @@ class DefaultChapterReader : ChapterReader {
             try {
                 val book = resolveBook(bookName)
                     ?: return@withContext null
-                val chapters = appDb.bookChapterDao().getChapterList(book.bookUrl)
+                val chapters = appDb.bookChapterDao.getChapterList(book.bookUrl)
                 if (chapters.isEmpty()) return@withContext null
 
                 val chapter = resolveChapter(book, chapters, chapterTitle)
@@ -111,7 +106,7 @@ class DefaultChapterReader : ChapterReader {
 
                 var content = BookHelp.getContent(book, chapter)
                 if (content.isNullOrBlank()) {
-                    val source = appDb.bookSourceDao().getBookSource(book.origin)
+                    val source = appDb.bookSourceDao.getBookSource(book.origin)
                     content = if (source != null) {
                         try {
                             // 联网抓取限时 15s，防止慢源拖死整个工具调用
@@ -119,10 +114,10 @@ class DefaultChapterReader : ChapterReader {
                                 "Chapter", "缓存未命中，联网抓取《${book.name}》·${chapter.title}"
                             )
                             withTimeoutOrNull(15_000L) {
-                                WebBook(source).getContentSuspend(
+                                WebBook.getContentAwait(
+                                    bookSource = source,
                                     book = book,
-                                    bookChapter = chapter,
-                                    scope = bridgeIoScope
+                                    bookChapter = chapter
                                 )
                             }
                         } catch (_: Exception) {
@@ -142,7 +137,7 @@ class DefaultChapterReader : ChapterReader {
         }
 
     private fun resolveBook(bookName: String): Book? =
-        appDb.bookDao().findByName(bookName).firstOrNull()
+        appDb.bookDao.findByName(bookName).firstOrNull()
 
     private fun resolveChapter(
         book: Book,
@@ -168,7 +163,7 @@ class DefaultBookSourceAnalyzer : BookSourceAnalyzer {
     }
 
     override suspend fun list(): List<Map<String, Any>> = withContext(Dispatchers.IO) {
-        appDb.bookSourceDao().allEnabled
+        appDb.bookSourceDao.allEnabled
             .map {
                 mapOf(
                     "name" to it.bookSourceName,
@@ -179,7 +174,7 @@ class DefaultBookSourceAnalyzer : BookSourceAnalyzer {
     }
 
     override suspend fun rules(url: String): Map<String, Any> = withContext(Dispatchers.IO) {
-        val source = appDb.bookSourceDao().getBookSource(url)
+        val source = appDb.bookSourceDao.getBookSource(url)
         if (source == null) {
             mapOf("url" to url, "found" to false)
         } else {
@@ -194,7 +189,7 @@ class DefaultBookSourceAnalyzer : BookSourceAnalyzer {
     }
 
     override suspend fun test(url: String): Map<String, Any> = withContext(Dispatchers.IO) {
-        val source = appDb.bookSourceDao().getBookSource(url)
+        val source = appDb.bookSourceDao.getBookSource(url)
         if (source == null) {
             return@withContext mapOf(
                 "url" to url, "status" to "missing", "message" to "书源不存在"
@@ -211,8 +206,8 @@ class DefaultBookSourceAnalyzer : BookSourceAnalyzer {
         val start = System.currentTimeMillis()
         try {
             val results = withTimeout(15_000L) {
-                WebBook(source).searchBookSuspend(
-                    scope = bridgeIoScope,
+                WebBook.searchBookAwait(
+                    bookSource = source,
                     key = "我的",
                     page = 1
                 )

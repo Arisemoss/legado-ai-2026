@@ -1,5 +1,6 @@
 package io.legado.app.ai
 
+import splitties.init.appCtx
 import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
@@ -59,7 +60,7 @@ object ModelManager {
     }
 
     fun getConfig(): AiModelConfig {
-        val prefs = io.legado.app.App.INSTANCE
+        val prefs = appCtx
         val baseUrl = prefs.prefStringSafe(PreferKey.aiBaseUrl)
             ?: "https://api.openai.com/v1"
         val model = prefs.prefStringSafe(PreferKey.aiModel) ?: "gpt-4o-mini"
@@ -77,7 +78,7 @@ object ModelManager {
     }
 
     fun saveConfig(config: AiModelConfig) {
-        val prefs = io.legado.app.App.INSTANCE
+        val prefs = appCtx
         prefs.putPrefString(PreferKey.aiBaseUrl, config.baseUrl)
         AiKeyStore.putApiKey(config.apiKey)
         prefs.putPrefString(PreferKey.aiModel, config.name)

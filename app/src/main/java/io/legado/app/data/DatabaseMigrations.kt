@@ -330,26 +330,30 @@ object DatabaseMigrations {
     /** AI 会话/消息表（移植自 Arisemoss/legado，原 v19->20 增量在此基线以 75->76 追加） */
     private val migration_75_76 = object : Migration(75, 76) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL("CREATE TABLE IF NOT EXISTS aiSessions(\
-               id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\
-               title TEXT NOT NULL,\
-               createdAt INTEGER NOT NULL,\
-               updatedAt INTEGER NOT NULL,\
-               archived INTEGER NOT NULL DEFAULT 0,\
-               model TEXT,\
-               lastSummaryAt INTEGER NOT NULL DEFAULT 0)")
-            db.execSQL("CREATE TABLE IF NOT EXISTS aiMessages(\
-               id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\
-               sessionId INTEGER NOT NULL,\
-               seq INTEGER NOT NULL,\
-               kind TEXT NOT NULL,\
-               role TEXT NOT NULL,\
-               content TEXT NOT NULL,\
-               payload TEXT,\
-               toolName TEXT,\
-               quotaBilled INTEGER,\
-               flags TEXT,\
-               createdAt INTEGER NOT NULL)")
+            db.execSQL(
+                """CREATE TABLE IF NOT EXISTS aiSessions(
+               id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+               title TEXT NOT NULL,
+               createdAt INTEGER NOT NULL,
+               updatedAt INTEGER NOT NULL,
+               archived INTEGER NOT NULL DEFAULT 0,
+               model TEXT,
+               lastSummaryAt INTEGER NOT NULL DEFAULT 0)"""
+            )
+            db.execSQL(
+                """CREATE TABLE IF NOT EXISTS aiMessages(
+               id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+               sessionId INTEGER NOT NULL,
+               seq INTEGER NOT NULL,
+               kind TEXT NOT NULL,
+               role TEXT NOT NULL,
+               content TEXT NOT NULL,
+               payload TEXT,
+               toolName TEXT,
+               quotaBilled INTEGER,
+               flags TEXT,
+               createdAt INTEGER NOT NULL)"""
+            )
             db.execSQL("CREATE INDEX IF NOT EXISTS idx_aiMessages_session_seq ON aiMessages(sessionId, seq)")
         }
     }
