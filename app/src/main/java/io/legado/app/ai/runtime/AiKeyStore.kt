@@ -5,7 +5,6 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import android.util.Log
-import io.legado.app.App
 import io.legado.app.ai.log.AiLog
 import io.legado.app.constant.PreferKey
 import io.legado.app.utils.getPrefString

@@ -1,8 +1,8 @@
 package io.legado.app.ai.bridge
 
+import io.legado.app.data.appDb
 import com.google.gson.Gson
 import com.google.gson.JsonParser
-import io.legado.app.App
 import io.legado.app.ai.log.AiLog
 import io.legado.app.data.entities.BookSource
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +35,7 @@ class DefaultSourceRuleWriter : SourceRuleWriter {
     override suspend fun apply(url: String, changes: Map<String, String>): Boolean =
         withContext(Dispatchers.IO) {
             runCatching {
-                val dao = App.db.bookSourceDao()
+                val dao = appDb.bookSourceDao()
                 val source = dao.getBookSource(url) ?: return@withContext false
                 val gson = Gson()
                 val root = JsonParser.parseString(gson.toJson(source)).asJsonObject

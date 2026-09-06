@@ -1,6 +1,6 @@
 package io.legado.app.ai.ui
 
-import io.legado.app.App
+import io.legado.app.data.appDb
 import io.legado.app.ai.AiPlatform
 import io.legado.app.ai.log.AiLog
 import io.legado.app.ai.model.AiProviderPresets
@@ -187,7 +187,7 @@ class AgentHubViewModel(
         refreshStatusLine()
         refreshSessions()
         val latest = runCatching {
-            App.db.aiSessionDao().getAll()
+            appDb.aiSessionDao().getAll()
         }.getOrNull() ?: emptyList()
 
         val target = latest.firstOrNull()?.id ?: conversation.create()
@@ -197,7 +197,7 @@ class AgentHubViewModel(
 
     /** 拉取会话列表（事件驱动：在会话增删/切换/回答完成后调用，替代高频轮询） */
     suspend fun refreshSessions() {
-        runCatching { App.db.aiSessionDao().getAll() }.getOrNull()?.let { sessions.value = it }
+        runCatching { appDb.aiSessionDao().getAll() }.getOrNull()?.let { sessions.value = it }
     }
 
     // ---------- 会话管理 ----------

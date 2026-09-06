@@ -1,12 +1,12 @@
 package io.legado.app.ai.bridge
 
+import io.legado.app.data.appDb
 import com.google.gson.Gson
 import io.legado.app.ai.log.AiLog
-import io.legado.app.App
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.SearchBook
-import io.legado.app.help.BookHelp
+import io.legado.app.help.book.BookHelp
 import io.legado.app.model.webBook.WebBook
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +37,7 @@ class DefaultBookFetcher : BookFetcher {
         withContext(Dispatchers.IO) {
             val seen = HashSet<String>()
             // 随机抽取而非固定头部源：避免搜索结果系统性偏向 customOrder 靠前的书源
-            val sources = App.db.bookSourceDao().allEnabled
+            val sources = appDb.bookSourceDao().allEnabled
                 .filter { !it.searchUrl.isNullOrBlank() }
                 .shuffled()
                 .take(MAX_SOURCES)
@@ -103,7 +103,7 @@ class DefaultChapterReader : ChapterReader {
             try {
                 val book = resolveBook(bookName)
                     ?: return@withContext null
-                val chapters = App.db.bookChapterDao().getChapterList(book.bookUrl)
+                val chapters = appDb.bookChapterDao().getChapterList(book.bookUrl)
                 if (chapters.isEmpty()) return@withContext null
 
                 val chapter = resolveChapter(book, chapters, chapterTitle)
@@ -111,7 +111,7 @@ class DefaultChapterReader : ChapterReader {
 
                 var content = BookHelp.getContent(book, chapter)
                 if (content.isNullOrBlank()) {
-                    val source = App.db.bookSourceDao().getBookSource(book.origin)
+                    val source = appDb.bookSourceDao().getBookSource(book.origin)
                     content = if (source != null) {
                         try {
                             // 联网抓取限时 15s，防止慢源拖死整个工具调用
@@ -142,7 +142,7 @@ class DefaultChapterReader : ChapterReader {
         }
 
     private fun resolveBook(bookName: String): Book? =
-        App.db.bookDao().findByName(bookName).firstOrNull()
+        appDb.bookDao().findByName(bookName).firstOrNull()
 
     private fun resolveChapter(
         book: Book,
@@ -168,7 +168,7 @@ class DefaultBookSourceAnalyzer : BookSourceAnalyzer {
     }
 
     override suspend fun list(): List<Map<String, Any>> = withContext(Dispatchers.IO) {
-        App.db.bookSourceDao().allEnabled
+        appDb.bookSourceDao().allEnabled
             .map {
                 mapOf(
                     "name" to it.bookSourceName,
@@ -179,7 +179,7 @@ class DefaultBookSourceAnalyzer : BookSourceAnalyzer {
     }
 
     override suspend fun rules(url: String): Map<String, Any> = withContext(Dispatchers.IO) {
-        val source = App.db.bookSourceDao().getBookSource(url)
+        val source = appDb.bookSourceDao().getBookSource(url)
         if (source == null) {
             mapOf("url" to url, "found" to false)
         } else {
@@ -194,7 +194,7 @@ class DefaultBookSourceAnalyzer : BookSourceAnalyzer {
     }
 
     override suspend fun test(url: String): Map<String, Any> = withContext(Dispatchers.IO) {
-        val source = App.db.bookSourceDao().getBookSource(url)
+        val source = appDb.bookSourceDao().getBookSource(url)
         if (source == null) {
             return@withContext mapOf(
                 "url" to url, "status" to "missing", "message" to "书源不存在"
