@@ -2,6 +2,8 @@ package io.legado.app.ai.bridge
 
 import io.legado.app.data.appDb
 import io.legado.app.constant.PreferKey
+import io.legado.app.utils.putPrefBoolean
+import splitties.init.appCtx
 import io.legado.app.help.config.AppConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -105,7 +107,7 @@ class DefaultAppController : AppController {
                     }
                 }
                 "$PreferKey.showRss" -> {
-                    AppConfig.showRSS = parseBool()
+                    appCtx.putPrefBoolean(PreferKey.showRss, parseBool())
                     mapOf("ok" to true, "key" to key, "value" to value)
                 }
                 else -> mapOf("ok" to false, "message" to "不支持的设置项: $key")
