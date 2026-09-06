@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ai_page_bg"
+    android:orientation="vertical">
+
+    <!-- 顶栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/ai_header_bg"
+        android:elevation="2dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="4dp"
+        android:paddingBottom="10dp">
+
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:contentDescription="返回"
+            android:padding="8dp"
+            android:src="@drawable/ic_arrow_back"
+            android:tint="@color/ai_text_main" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="运行日志"
+            android:textColor="@color/ai_text_main"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/btn_clear"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:contentDescription="清空日志"
+            android:padding="8dp"
+            android:src="@drawable/ic_clear_all"
+            android:tint="@color/ai_text_sub" />
+
+        <ImageView
+            android:id="@+id/btn_copy"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:contentDescription="复制日志"
+            android:padding="8dp"
+            android:src="@drawable/ic_copy"
+            android:tint="@color/ai_text_sub" />
+
+        <ImageView
+            android:id="@+id/btn_share"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:contentDescription="分享完整日志文件"
+            android:padding="8dp"
+            android:src="@drawable/ic_share"
+            android:tint="@color/ai_text_sub" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_log_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="12dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="2dp"
+        android:text="记录模型请求 / 流式 / 工具执行 / 错误；「分享」导出含历史会话的完整文件"
+        android:textColor="@color/ai_text_sub"
+        android:textSize="11sp" />
+
+    <!-- 日志正文 -->
+    <ScrollView
+        android:id="@+id/sv_log"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <TextView
+            android:id="@+id/tv_log"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:padding="12dp"
+            android:textColor="@color/ai_text_main"
+            android:textIsSelectable="true"
+            android:textSize="10sp" />
+    </ScrollView>
+</LinearLayout>

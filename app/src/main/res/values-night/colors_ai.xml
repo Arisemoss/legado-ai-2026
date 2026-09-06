@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AI Hub 配色 — Material 3 令牌体系（暗色）
+         来源：Book's Story (GPL-3.0) BlueTheme 暗色方案，映射到本应用键名 -->
+    <color name="ai_page_bg">#121318</color>
+    <color name="ai_accent">#B1C5FF</color>
+    <color name="ai_accent_deep">#B8CAFF</color>
+    <color name="ai_accent_container">#304578</color>
+    <color name="ai_on_accent_container">#DAE2FF</color>
+    <color name="ai_text_main">#E2E2E9</color>
+    <color name="ai_text_sub">#8F9099</color>
+    <color name="ai_bubble_user">#B1C5FF</color>
+    <color name="ai_bubble_user_text">#172E60</color>
+    <color name="ai_bubble_ai_bg">#1E1F25</color>
+    <color name="ai_bubble_ai_stroke">#33343A</color>
+    <color name="ai_tool_bg">#1A1B21</color>
+    <color name="ai_tool_stroke">#282A2F</color>
+    <color name="ai_confirm_bg">#33290F</color>
+    <color name="ai_confirm_stroke">#7A651F</color>
+    <color name="ai_error_bg">#93000A</color>
+    <color name="ai_error_stroke">#FFB4AB</color>
+    <color name="ai_error_text">#FFB4AB</color>
+    <color name="ai_ok_text">#81C995</color>
+    <color name="ai_chip_text">#DAE2FF</color>
+    <color name="ai_chip_stroke">#44464F</color>
+    <color name="ai_input_bg">#1E1F25</color>
+    <color name="ai_input_stroke">#33343A</color>
+    <color name="ai_header_bg">#1A1B21</color>
+    <color name="ai_send_disabled">#3A4256</color>
+    <color name="ai_stop_bg">#93000A</color>
+    <color name="ai_menu_card">#1A1B21</color>
+    <color name="ai_menu_card_stroke">#282A2F</color>
+    <color name="ai_warn_text">#E6B451</color>
+</resources>

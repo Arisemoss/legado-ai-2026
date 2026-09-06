@@ -186,4 +186,20 @@ object PreferKey {
     const val showReadTitleAddition = "showReadTitleAddition"
     const val readBarStyleFollowPage = "readBarStyleFollowPage"
     const val contentSelectSpeakMod = "contentReadAloudMod"
+
+    // AI 平台（移植）：
+    const val aiBaseUrl = "ai_base_url"
+    const val aiApiKey = "ai_api_key"
+    const val aiModel = "ai_model"
+    const val aiProvider = "ai_provider"
+    const val aiStream = "ai_stream"
+    const val aiTimeout = "ai_timeout"
+    const val aiMaxRounds = "ai_max_rounds"
+    const val aiSessionWindow = "ai_session_window"
+    const val aiChatBgPath = "ai_chat_bg_path"
+    const val aiChatBgOpacity = "ai_chat_bg_opacity"
+    const val aiChatBgGradient = "ai_chat_bg_gradient"
+    const val aiToolProtocol = "ai_tool_protocol"
+    const val aiFloatBallSide = "ai_float_ball_side"
+    const val aiFloatBallYRatio = "ai_float_ball_y_ratio"
 }

@@ -107,6 +107,12 @@ android {
             dimension "mode"
             manifestPlaceholders.put("APP_CHANNEL_VALUE", "app")
         }
+        ai {
+            // AI 共存版：独立包名，可与官方 io.legado.app.release 同时安装
+            dimension "mode"
+            applicationId "io.legado.ai"
+            manifestPlaceholders.put("APP_CHANNEL_VALUE", "ai")
+        }
     }
 
     android.applicationVariants.configureEach { variant ->

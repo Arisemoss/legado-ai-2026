@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- ═══ 背景层（RikkaHub 风格：自定义图片 / 极光渐变 / 默认纯色）═══ -->
+    <io.legado.app.ai.ui.AuroraBackgroundView
+        android:id="@+id/aurora_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/iv_chat_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
+    <View
+        android:id="@+id/view_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/ai_bg_scrim_chat"
+        android:visibility="gone" />
+
+    <!-- ═══ 内容层 ═══ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+    <!-- 顶栏：毛玻璃浮卡（极光/自定义背景可透出，日/夜自适应渐变描边） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/ai_bg_header_glass"
+        android:elevation="2dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="10dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="AI 智能助手"
+                android:textColor="@color/ai_text_main"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="未配置模型 · 点右上角设置"
+                android:textColor="@color/ai_text_sub"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/btn_sessions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/ai_bg_chip"
+            android:paddingStart="12dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="6dp"
+            android:text="会话"
+            android:textColor="@color/ai_chip_text"
+            android:textSize="13sp" />
+
+        <ImageView
+            android:id="@+id/btn_new_session"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="4dp"
+            android:contentDescription="新建会话"
+            android:padding="8dp"
+            android:src="@drawable/ic_ai_new_chat"
+            android:tint="@color/ai_accent" />
+
+        <ImageView
+            android:id="@+id/btn_logs"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:contentDescription="运行日志"
+            android:padding="8dp"
+            android:src="@drawable/ic_bug_report"
+            android:tint="@color/ai_accent" />
+
+        <ImageView
+            android:id="@+id/btn_config"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="2dp"
+            android:contentDescription="AI 配置"
+            android:padding="8dp"
+            android:src="@drawable/ic_settings"
+            android:tint="@color/ai_text_sub" />
+    </LinearLayout>
+
+    <!-- 消息列表 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingBottom="8dp"
+        android:paddingTop="8dp" />
+
+    <!-- 空状态引导 -->
+    <LinearLayout
+        android:id="@+id/box_empty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_ai_empty_book"
+            android:tint="@color/ai_accent" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text="我是你的阅读助手\n可以帮你找书、读书、懂书、修书源"
+            android:textColor="@color/ai_text_sub"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- 快捷指令 -->
+    <HorizontalScrollView
+        android:id="@+id/chips_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/chip_summarize"
+                style="@style/AiSuggestionChip"
+                android:text="总结当前章节" />
+
+            <TextView
+                android:id="@+id/chip_find_book"
+                style="@style/AiSuggestionChip"
+                android:text="帮我找书" />
+
+            <TextView
+                android:id="@+id/chip_characters"
+                style="@style/AiSuggestionChip"
+                android:text="分析人物关系" />
+
+            <TextView
+                android:id="@+id/chip_source"
+                style="@style/AiSuggestionChip"
+                android:text="诊断书源" />
+
+            <TextView
+                android:id="@+id/chip_shelf"
+                style="@style/AiSuggestionChip"
+                android:text="看看我的书架" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- 输入中指示 -->
+    <LinearLayout
+        android:id="@+id/typing_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:layout_width="14dp"
+            android:layout_height="14dp" />
+
+        <TextView
+            android:id="@+id/tv_typing"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="思考中…"
+            android:textColor="@color/ai_text_sub"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- 输入栏（RikkaHub 风格：胶囊输入卡 + 圆形发送按钮） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="bottom"
+        android:orientation="horizontal"
+        android:paddingStart="10dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="10dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/ai_bg_input_card"
+            android:gravity="center_vertical"
+            android:minHeight="48dp"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="4dp">
+
+            <EditText
+                android:id="@+id/et_input"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="问点什么…"
+                android:inputType="textMultiLine"
+                android:maxLines="5"
+                android:minLines="1"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:textColor="@color/ai_text_main"
+                android:textColorHint="@color/ai_text_sub"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/btn_stop"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/ai_bg_stop_circle"
+            android:elevation="2dp"
+            android:visibility="gone">
+
+            <View
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_gravity="center"
+                android:background="#FFFFFF" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/btn_send"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/ai_bg_send_circle"
+            android:elevation="2dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:contentDescription="发送"
+                android:src="@drawable/ic_ai_send_arrow"
+                android:tint="#FFFFFF" />
+        </FrameLayout>
+    </LinearLayout>
+
+    </LinearLayout>
+</FrameLayout>

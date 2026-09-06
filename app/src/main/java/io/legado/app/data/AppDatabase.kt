@@ -29,6 +29,8 @@ import io.legado.app.data.dao.RuleSubDao
 import io.legado.app.data.dao.SearchBookDao
 import io.legado.app.data.dao.SearchKeywordDao
 import io.legado.app.data.dao.ServerDao
+import io.legado.app.data.dao.AiMessageDao
+import io.legado.app.data.dao.AiSessionDao
 import io.legado.app.data.dao.TxtTocRuleDao
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
@@ -51,6 +53,8 @@ import io.legado.app.data.entities.RuleSub
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.data.entities.SearchKeyword
 import io.legado.app.data.entities.Server
+import io.legado.app.data.entities.AiMessage
+import io.legado.app.data.entities.AiSession
 import io.legado.app.data.entities.TxtTocRule
 import io.legado.app.help.DefaultData
 import org.intellij.lang.annotations.Language
@@ -67,13 +71,13 @@ val appDb by lazy {
 }
 
 @Database(
-    version = 75,
-    exportSchema = true,
+    version = 76, // AI 表并入（移植）75->76
+    exportSchema = false, // TODO 移植完成后用 KSP 重生成 76.json 后改回 true
     entities = [Book::class, BookGroup::class, BookSource::class, BookChapter::class,
         ReplaceRule::class, SearchBook::class, SearchKeyword::class, Cookie::class,
         RssSource::class, Bookmark::class, RssArticle::class, RssReadRecord::class,
         RssStar::class, TxtTocRule::class, ReadRecord::class, HttpTTS::class, Cache::class,
-        RuleSub::class, DictRule::class, KeyboardAssist::class, Server::class],
+        RuleSub::class, DictRule::class, KeyboardAssist::class, Server::class, AiSession::class, AiMessage::class],
     views = [BookSourcePart::class],
     autoMigrations = [
         AutoMigration(from = 43, to = 44),
@@ -133,6 +137,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val dictRuleDao: DictRuleDao
     abstract val keyboardAssistsDao: KeyboardAssistsDao
     abstract val serverDao: ServerDao
+    abstract val aiSessionDao: AiSessionDao
+    abstract val aiMessageDao: AiMessageDao
 
     companion object {
 

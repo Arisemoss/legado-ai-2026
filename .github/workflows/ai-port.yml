@@ -1,0 +1,40 @@
+name: AI Port Build
+
+on:
+  push:
+    branches: [ port-master, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ai-port-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        product: [ ai ]
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build assemble${{ matrix.product }}Debug
+        run: |
+          chmod +x gradlew
+          ./gradlew assemble${{ matrix.product }}Debug --no-daemon --stacktrace
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ai-debug-apk
+          path: app/build/outputs/apk/ai/debug/
+          if-no-files-found: ignore

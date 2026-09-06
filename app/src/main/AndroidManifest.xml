@@ -524,6 +524,11 @@
         <meta-data
             android:name="channel"
             android:value="${APP_CHANNEL_VALUE}" />
+        <!-- AI 助手（移植：AgentHub 对话页 / AI 运行日志） -->
+        <activity
+            android:name=".ai.ui.AgentHubActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".ai.ui.AiLogActivity" />
     </application>
 
     <queries>

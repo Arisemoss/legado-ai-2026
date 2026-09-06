@@ -140,3 +140,6 @@ cn.hutool.core.util.**{*;}
 # Throwable
 -keepnames class * extends java.lang.Throwable
 -keepclassmembernames,allowobfuscation class * extends java.lang.Throwable{*;}
+
+# AI 平台层：Gson/反射序列化协议兼容（移植自 Arisemoss/legado）
+-keep class io.legado.app.ai.** { *; }
