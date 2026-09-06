@@ -1,5 +1,6 @@
 package io.legado.app.ai
 
+import okhttp3.MediaType.Companion.toMediaType
 import splitties.init.appCtx
 import android.content.Context
 import android.util.Log
@@ -49,7 +50,7 @@ private fun Context.prefBooleanSafe(key: String, defValue: Boolean = false): Boo
 object ModelManager {
 
     private val gson = Gson()
-    private val jsonMediaType = MediaType.parse("application/json; charset=utf-8")
+    private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
@@ -112,13 +113,13 @@ object ModelManager {
                 .build()
 
             val response = httpClient.newCall(httpRequest).execute()
-            val responseBody = response.body()?.string() ?: ""
+            val responseBody = response.body?.string() ?: ""
 
             if (!response.isSuccessful) {
                 val errorMsg = try {
                     gson.fromJson(responseBody, ErrorResponse::class.java)?.message
                 } catch (_: Exception) { null }
-                throw RuntimeException(errorMsg ?: "HTTP ${response.code()}: $responseBody")
+                throw RuntimeException(errorMsg ?: "HTTP ${response.code}: $responseBody")
             }
 
             gson.fromJson(responseBody, ChatCompletionResponse::class.java)

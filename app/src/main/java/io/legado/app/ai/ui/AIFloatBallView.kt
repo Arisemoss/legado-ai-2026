@@ -12,7 +12,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import io.legado.app.R
 import io.legado.app.constant.PreferKey
-import io.legado.app.service.help.ReadBook
+import io.legado.app.model.ReadBook
 import io.legado.app.utils.getPrefFloat
 import io.legado.app.utils.getPrefString
 import io.legado.app.utils.putPrefFloat

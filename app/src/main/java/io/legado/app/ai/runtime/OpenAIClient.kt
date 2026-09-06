@@ -1,5 +1,6 @@
 package io.legado.app.ai.runtime
 
+import okhttp3.MediaType.Companion.toMediaType
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -54,12 +55,12 @@ class OpenAIClient(
             .build()
         val respBody = try {
             client.newCall(req).execute().use { resp ->
-                val text = resp.body()?.string()
+                val text = resp.body?.string()
                 // 非 2xx 一律映射 AUTH_FAILED（与流式路径一致），避免被误判为可重试错误空转重试
                 if (!resp.isSuccessful) {
                     throw AgentException(
                         AgentErrorCode.AUTH_FAILED,
-                        "HTTP ${resp.code()}: ${text?.take(200).orEmpty()}"
+                        "HTTP ${resp.code}: ${text?.take(200).orEmpty()}"
                     )
                 }
                 text
@@ -102,13 +103,13 @@ class OpenAIClient(
 
         try {
             client.newCall(req).execute().use { resp ->
-                val respBody = resp.body()
+                val respBody = resp.body
                     ?: throw AgentException(AgentErrorCode.NETWORK_UNAVAILABLE, "empty body")
                 if (!resp.isSuccessful) {
-                    AiLog.e("SSE", "HTTP ${resp.code()}")
+                    AiLog.e("SSE", "HTTP ${resp.code}")
                     throw AgentException(
                         AgentErrorCode.AUTH_FAILED,
-                        "HTTP ${resp.code()}: ${respBody.string().take(200)}"
+                        "HTTP ${resp.code}: ${respBody.string().take(200)}"
                     )
                 }
                 val source = respBody.source()
@@ -318,7 +319,7 @@ class OpenAIClient(
     }
 
     private companion object {
-        val JSON_MEDIA = MediaType.parse("application/json; charset=utf-8")
+        val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
         val GSON = com.google.gson.Gson()
     }
 }

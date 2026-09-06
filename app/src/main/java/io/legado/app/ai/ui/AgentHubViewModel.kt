@@ -188,7 +188,7 @@ class AgentHubViewModel(
         refreshStatusLine()
         refreshSessions()
         val latest = runCatching {
-            appDb.aiSessionDao().getAll()
+            appDb.aiSessionDao.getAll()
         }.getOrNull() ?: emptyList()
 
         val target = latest.firstOrNull()?.id ?: conversation.create()
@@ -198,7 +198,7 @@ class AgentHubViewModel(
 
     /** 拉取会话列表（事件驱动：在会话增删/切换/回答完成后调用，替代高频轮询） */
     suspend fun refreshSessions() {
-        runCatching { appDb.aiSessionDao().getAll() }.getOrNull()?.let { sessions.value = it }
+        runCatching { appDb.aiSessionDao.getAll() }.getOrNull()?.let { sessions.value = it }
     }
 
     // ---------- 会话管理 ----------

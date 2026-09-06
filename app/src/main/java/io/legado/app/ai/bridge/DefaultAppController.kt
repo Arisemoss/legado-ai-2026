@@ -2,7 +2,7 @@ package io.legado.app.ai.bridge
 
 import io.legado.app.data.appDb
 import io.legado.app.constant.PreferKey
-import io.legado.app.help.AppConfig
+import io.legado.app.help.config.AppConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

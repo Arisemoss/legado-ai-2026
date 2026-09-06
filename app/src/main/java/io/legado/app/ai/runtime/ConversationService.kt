@@ -15,8 +15,8 @@ class ConversationService(
     private val window: Int = 50,
     private val maxChars: Int = 12_000
 ) {
-    private val sessionDao get() = appDb.aiSessionDao()
-    private val messageDao get() = appDb.aiMessageDao()
+    private val sessionDao get() = appDb.aiSessionDao
+    private val messageDao get() = appDb.aiMessageDao
     private val gson = Gson()
 
     suspend fun create(title: String = "新会话"): Long =
