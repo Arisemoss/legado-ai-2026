@@ -13,9 +13,7 @@ import android.widget.ImageView
 import io.legado.app.R
 import io.legado.app.constant.PreferKey
 import io.legado.app.model.ReadBook
-import io.legado.app.utils.getPrefFloat
 import io.legado.app.utils.getPrefString
-import io.legado.app.utils.putPrefFloat
 import io.legado.app.utils.putPrefString
 
 /**
@@ -141,7 +139,7 @@ class AIFloatBallView @JvmOverloads constructor(
     private fun restorePosition() {
         val parent = parent as? ViewGroup ?: return
         val side = context.getPrefString(PreferKey.aiFloatBallSide, "R") ?: "R"
-        val ratio = context.getPrefFloat(PreferKey.aiFloatBallYRatio, 0.72f)
+        val ratio = context.getPrefString(PreferKey.aiFloatBallYRatio)?.toFloatOrNull() ?: 0.72f
         x = if (side == "L") 0f else (parent.width - width).toFloat()
         y = ratio.coerceIn(0f, 1f) * (parent.height - height)
         alpha = DOCK_ALPHA
@@ -153,7 +151,7 @@ class AIFloatBallView @JvmOverloads constructor(
         val maxY = (parent.height - height).coerceAtLeast(1)
         val ratio = (y / maxY).coerceIn(0f, 1f)
         context.putPrefString(PreferKey.aiFloatBallSide, side)
-        context.putPrefFloat(PreferKey.aiFloatBallYRatio, ratio)
+        context.putPrefString(PreferKey.aiFloatBallYRatio, ratio.toString())
     }
 
     private fun clampToParent() {

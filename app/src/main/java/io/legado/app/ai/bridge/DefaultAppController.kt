@@ -79,7 +79,7 @@ class DefaultAppController : AppController {
             mapOf<String, Any>(
                 "nightTheme" to AppConfig.isNightTheme,
                 "eInk" to AppConfig.isEInkMode,
-                "showRss" to AppConfig.isShowRSS,
+                "showRss" to AppConfig.showRSS,
                 "threadCount" to AppConfig.threadCount,
                 "importBookPath" to AppConfig.importBookPath.orEmpty()
             )
@@ -105,7 +105,7 @@ class DefaultAppController : AppController {
                     }
                 }
                 "$PreferKey.showRss" -> {
-                    AppConfig.isShowRSS = parseBool()
+                    AppConfig.showRSS = parseBool()
                     mapOf("ok" to true, "key" to key, "value" to value)
                 }
                 else -> mapOf("ok" to false, "message" to "不支持的设置项: $key")
