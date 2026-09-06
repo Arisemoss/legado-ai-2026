@@ -27,7 +27,7 @@ jobs:
           java-version: 17
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Build assemble${{ matrix.product }}Debug
+      - name: Run AI unit tests (smoke)\n        run: |\n          ./gradlew testAiDebugUnitTest --no-daemon\n      - name: Build assemble${{ matrix.product }}Debug
         run: |
           chmod +x gradlew
           ./gradlew assemble${{ matrix.product }}Debug --no-daemon --stacktrace
