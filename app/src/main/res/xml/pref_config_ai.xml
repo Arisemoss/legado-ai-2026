@@ -2,7 +2,7 @@
 <androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <io.legado.app.ui.widget.prefs.NameListPreference
+    <androidx.preference.ListPreference
         android:key="ai_provider"
         android:title="服务商预设"
         android:summary="选择服务商可自动填充 Base URL 与推荐模型"
@@ -11,27 +11,27 @@
         app:entryValues="@array/ai_provider_values"
         app:iconSpaceReserved="false" />
 
-    <io.legado.app.ui.widget.prefs.EditTextPreference
+    <androidx.preference.EditTextPreference
         android:key="ai_base_url"
         android:title="服务商 Base URL"
         android:summary="选服务商自动填充，也可自定"
         android:defaultValue="https://api.openai.com/v1"
         app:iconSpaceReserved="false" />
 
-    <io.legado.app.ui.widget.prefs.EditTextPreference
+    <androidx.preference.EditTextPreference
         android:key="ai_api_key"
         android:title="API Key"
         android:summary="将加密存储于系统密钥库"
         android:inputType="textPassword"
         app:iconSpaceReserved="false" />
 
-    <io.legado.app.ui.widget.prefs.EditTextPreference
+    <androidx.preference.EditTextPreference
         android:key="ai_model"
         android:title="模型名"
         android:defaultValue="gpt-4o-mini"
         app:iconSpaceReserved="false" />
 
-    <io.legado.app.ui.widget.prefs.SwitchPreference
+    <androidx.preference.SwitchPreferenceCompat
         android:key="ai_stream"
         android:title="流式输出"
         android:summary="开启后分块流式返回，打字机效果"
@@ -47,19 +47,19 @@
         android:entryValues="@array/ai_tool_protocol_values"
         app:iconSpaceReserved="false" />
 
-    <io.legado.app.ui.widget.prefs.EditTextPreference
+    <androidx.preference.EditTextPreference
         android:key="ai_timeout"
         android:title="轮询超时(毫秒)"
         android:defaultValue="120000"
         app:iconSpaceReserved="false" />
 
-    <io.legado.app.ui.widget.prefs.EditTextPreference
+    <androidx.preference.EditTextPreference
         android:key="ai_max_rounds"
         android:title="最大工具轮数"
         android:defaultValue="5"
         app:iconSpaceReserved="false" />
 
-    <io.legado.app.ui.widget.prefs.EditTextPreference
+    <androidx.preference.EditTextPreference
         android:key="ai_session_window"
         android:title="会话消息窗口"
         android:defaultValue="50"
@@ -69,7 +69,7 @@
     <PreferenceCategory android:title="聊天背景（RikkaHub 风格）"
         app:iconSpaceReserved="false">
 
-        <io.legado.app.ui.widget.prefs.Preference
+        <androidx.preference.Preference
             android:key="ai_chat_bg_pick"
             android:title="选择背景图片"
             android:summary="从相册选择图片作为 AI 对话背景"
@@ -83,14 +83,14 @@
             android:entryValues="@array/ai_bg_opacity_values"
             app:iconSpaceReserved="false" />
 
-        <io.legado.app.ui.widget.prefs.SwitchPreference
+        <androidx.preference.SwitchPreferenceCompat
             android:key="ai_chat_bg_gradient"
             android:title="极光渐变背景"
             android:summary="Gemini 风动态流光渐变，优先于背景图片"
             android:defaultValue="false"
             app:iconSpaceReserved="false" />
 
-        <io.legado.app.ui.widget.prefs.Preference
+        <androidx.preference.Preference
             android:key="ai_chat_bg_clear"
             android:title="清除自定义背景"
             android:summary="恢复默认纯色背景"

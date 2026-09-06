@@ -33,6 +33,8 @@ import io.legado.app.databinding.AiItemToolBinding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.ui.book.read.ReadBookActivity
 import io.legado.app.ui.book.search.SearchActivity
+import io.legado.app.ui.config.ConfigActivity
+import io.legado.app.ui.config.ConfigTag
 import io.legado.app.ui.main.MainActivity
 import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.getPrefString
@@ -161,8 +163,10 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
         }
         binding.btnStop.setOnClickListener { vm.stop() }
         binding.btnConfig.setOnClickListener {
-            // TODO(移植): 接入 AI 设置页（ConfigTag.AI_CONFIG / AiConfigFragment 随配置移植）
-            toast("AI 设置页移植中（可编辑 gradle 或待配置页接入）")
+            startActivity(
+                Intent(this, ConfigActivity::class.java)
+                    .putExtra("configTag", ConfigTag.AI_CONFIG)
+            )
         }
         binding.btnNewSession.setOnClickListener {
             uiJobs += lifecycleScope.launch { runCatching { vm.newSession() } }
