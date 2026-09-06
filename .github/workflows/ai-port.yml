@@ -13,7 +13,7 @@ jobs:
   build:
     strategy:
       matrix:
-        product: [ ai ]
+        product: [ ai, app ]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
