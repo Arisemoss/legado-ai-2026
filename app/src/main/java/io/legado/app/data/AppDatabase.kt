@@ -72,7 +72,7 @@ val appDb by lazy {
 
 @Database(
     version = 76, // AI 表并入（移植）75->76
-    exportSchema = false, // TODO 移植完成后用 KSP 重生成 76.json 后改回 true
+    exportSchema = true, // autoMigrations 需要；76.json 由 KSP 生成后入库
     entities = [Book::class, BookGroup::class, BookSource::class, BookChapter::class,
         ReplaceRule::class, SearchBook::class, SearchKeyword::class, Cookie::class,
         RssSource::class, Bookmark::class, RssArticle::class, RssReadRecord::class,
