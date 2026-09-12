@@ -151,7 +151,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private fun handleRequestTab(intent: Intent?) {
         val tab = intent?.getIntExtra("agent_select_tab", -1) ?: -1
         if (tab < 0) return
-        val count = binding.viewPagerMain.adapter?.itemCount ?: 0
+        val count = binding.viewPagerMain.adapter?.count ?: 0
         if (tab in 0 until count) {
             binding.viewPagerMain.setCurrentItem(tab, false)
         }
