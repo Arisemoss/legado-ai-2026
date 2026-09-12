@@ -10,14 +10,19 @@ import androidx.preference.ListPreference
 import androidx.preference.Preference
 import io.legado.app.R
 import io.legado.app.ai.ModelManager
+import io.legado.app.ai.model.AiModelConfig
+import io.legado.app.ai.model.ChatMessage
+import io.legado.app.ai.runtime.OpenAIClient
 import io.legado.app.ai.model.AiProviderPresets
 import io.legado.app.ai.runtime.AiKeyStore
 import io.legado.app.constant.PreferKey
+import androidx.lifecycle.lifecycleScope
 import io.legado.app.lib.prefs.fragment.PreferenceFragment
 import io.legado.app.utils.getPrefString
 import io.legado.app.utils.putPrefString
 import io.legado.app.utils.removePref
 import java.io.File
+import kotlinx.coroutines.launch
 
 /**
  * AI 平台配置（移植自 Arisemoss/legado，2026 基线 PreferenceFragment 版）。
@@ -27,6 +32,7 @@ class AiConfigFragment : PreferenceFragment() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.pref_config_ai)
+        addTestConnectionPreference()
         initProviderPreset()
         initApiKey()
         initChatBackgroundPrefs()
@@ -100,6 +106,40 @@ class AiConfigFragment : PreferenceFragment() {
                 toast("背景已更新")
             }.onFailure { toast("设置失败: ${it.localizedMessage}") }
         }
+    }
+
+
+    /** 「测试连接」：按当前配置发起一次最小 /chat/completions 请求 */
+    private fun addTestConnectionPreference() {
+        val pref = Preference(requireContext()).apply {
+            key = "ai_test_conn"
+            title = "测试连接"
+            summary = "验证 Base URL / Key / 模型是否可用"
+        }
+        pref.setOnPreferenceClickListener {
+            pref.isEnabled = false
+            pref.summary = "测试中…"
+            viewLifecycleOwner.lifecycleScope.launch {
+                val result = runCatching {
+                    val cfg = ModelManager.getConfig()
+                    val client = OpenAIClient(
+                        baseUrl = cfg.baseUrl,
+                        apiKey = cfg.apiKey,
+                        model = cfg.name,
+                        timeoutMillis = cfg.timeoutMillis,
+                        textToolMode = cfg.toolProtocol == AiModelConfig.PROTOCOL_TEXT
+                    )
+                    client.complete(listOf(ChatMessage(role = "user", content = "ping")), null, false)
+                }
+                pref.isEnabled = true
+                pref.summary = result.fold(
+                    onSuccess = { "✅ 连接成功（模型：${it.model}）" },
+                    onFailure = { "❌ ${it.localizedMessage ?: it.javaClass.simpleName}" }
+                )
+            }
+            true
+        }
+        preferenceScreen.addPreference(pref)
     }
 
     private fun upAllSummary() {
