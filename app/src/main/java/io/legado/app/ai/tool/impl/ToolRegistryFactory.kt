@@ -34,6 +34,7 @@ fun buildRegistry(bridge: AiBridge): ToolRegistry {
     r.register(ShowBookshelfTool(bridge))
     // 书源控制
     r.register(SetSourceEnabledTool(bridge))
+    r.register(ImportBookSourcesTool())
     // 设置
     r.register(GetSettingTool(bridge))
     r.register(SetSettingTool(bridge))

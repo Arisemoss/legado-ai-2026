@@ -34,6 +34,7 @@ class AiConfigFragment : PreferenceFragment() {
         addPreferencesFromResource(R.xml.pref_config_ai)
         addTestConnectionPreference()
         initProviderPreset()
+        initModelPicker()
         initApiKey()
         initChatBackgroundPrefs()
         upAllSummary()
@@ -71,6 +72,7 @@ class AiConfigFragment : PreferenceFragment() {
             pref.setOnPreferenceChangeListener { _, newValue ->
                 AiKeyStore.putApiKey(newValue as? String ?: "")
                 upAllSummary()
+                refreshModels()
                 false
             }
         }
@@ -142,6 +144,99 @@ class AiConfigFragment : PreferenceFragment() {
         preferenceScreen.addPreference(pref)
     }
 
+    private var modelPick: ListPreference? = null
+    private var refreshPref: Preference? = null
+
+    /** 模型选择器 + 刷新按钮：从 /models 拉取真实模型列表 */
+    private fun initModelPicker() {
+        val pick = ListPreference(requireContext()).apply {
+            key = "ai_model_pick"
+            title = "选择模型（自动获取）"
+            summary = "填入 API Key 后自动拉取；也可在上方手动填写模型名"
+        }
+        pick.setOnPreferenceChangeListener { _, newValue ->
+            val m = newValue as? String
+            if (!m.isNullOrBlank()) {
+                putPrefString(PreferKey.aiModel, m)
+                upAllSummary()
+            }
+            true
+        }
+        val refresh = Preference(requireContext()).apply {
+            key = "ai_refresh_models"
+            title = "刷新模型列表"
+            summary = "需要已填 Base URL 与 API Key"
+        }
+        refresh.setOnPreferenceClickListener {
+            refreshModels()
+            true
+        }
+        preferenceScreen.addPreference(pick)
+        preferenceScreen.addPreference(refresh)
+        modelPick = pick
+        refreshPref = refresh
+
+        findPreference<EditTextPreference>(PreferKey.aiBaseUrl)?.setOnPreferenceChangeListener { _, v ->
+            val url = (v as? String).orEmpty()
+            if (url.isNotBlank()) view?.postDelayed({ refreshModels() }, 200)
+            true
+        }
+        findPreference<EditTextPreference>(PreferKey.aiModel)?.let { m ->
+            m.setOnPreferenceChangeListener { _, v ->
+                val name = (v as? String).orEmpty()
+                if (name.isNotBlank()) view?.postDelayed({ upAllSummary() }, 100)
+                true
+            }
+        }
+        refreshModels()
+    }
+
+    /** 拉取 /models 并回填列表；失败回退到服务商预设模型 */
+    private fun refreshModels() {
+        val ctx = requireContext()
+        val pick = modelPick ?: return
+        val refresh = refreshPref
+        val cfg = ModelManager.getConfig()
+        if (cfg.apiKey.isBlank()) {
+            refresh?.summary = "先填写 API Key 再刷新"
+            return
+        }
+        refresh?.isEnabled = false
+        refresh?.summary = "拉取中…"
+        viewLifecycleOwner.lifecycleScope.launch {
+            val res = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                ModelManager.fetchModels(cfg.baseUrl, cfg.apiKey)
+            }
+            refresh?.isEnabled = true
+            res.fold(
+                onSuccess = { models ->
+                    if (models.isEmpty()) {
+                        val preset = AiProviderPresets.byBaseUrl(cfg.baseUrl)
+                            ?: AiProviderPresets.byId(ctx.getPrefString(PreferKey.aiProvider))
+                        val fallback = preset?.models.orEmpty()
+                        pick.entryValues = fallback.toTypedArray()
+                        pick.entries = fallback.toTypedArray()
+                        refresh?.summary = "服务商未返回列表，已用预设模型（${fallback.size} 个）"
+                    } else {
+                        pick.entryValues = models.toTypedArray()
+                        pick.entries = models.toTypedArray()
+                        refresh?.summary = "共 ${models.size} 个模型"
+                        val cur = cfg.name
+                        if (cur.isBlank() || models.none { it == cur }) {
+                            models.firstOrNull()?.let {
+                                putPrefString(PreferKey.aiModel, it)
+                                upAllSummary()
+                            }
+                        }
+                        pick.value = ctx.getPrefString(PreferKey.aiModel)
+                    }
+                },
+                onFailure = { e ->
+                    refresh?.summary = "拉取失败：${e.localizedMessage ?: e.javaClass.simpleName}"
+                }
+            )
+        }
+    }
     private fun upAllSummary() {
         val ctx = requireContext()
         val preset = AiProviderPresets.byId(ctx.getPrefString(PreferKey.aiProvider) ?: "")

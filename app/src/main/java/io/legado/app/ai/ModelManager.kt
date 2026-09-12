@@ -127,4 +127,36 @@ object ModelManager {
             throw e
         }
     }
+
+    /**
+     * 拉取 OpenAI 兼容的模型列表（GET /models），用于设置页自动回填模型名。
+     * 返回按字母序排列的模型 id 列表；网络/鉴权失败时返回 Result.failure。
+     */
+    fun fetchModels(
+        baseUrl: String,
+        apiKey: String,
+        timeoutMs: Long = 15_000L
+    ): Result<List<String>> = runCatching {
+        val client = httpClient.newBuilder()
+            .connectTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+            .readTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+            .build()
+        val url = baseUrl.trim().trimEnd('/') + "/models"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("Authorization", "Bearer $apiKey")
+            .get()
+            .build()
+        client.newCall(request).execute().use { resp ->
+            val text = resp.body?.string() ?: ""
+            if (!resp.isSuccessful) {
+                throw RuntimeException("HTTP ${resp.code}: ${text.take(200)}")
+            }
+            val root = com.google.gson.JsonParser.parseString(text).asJsonObject
+            val arr = root.getAsJsonArray("data") ?: return@runCatching emptyList()
+            arr.mapNotNull { el ->
+                runCatching { el.asJsonObject.get("id").asString }.getOrNull()
+            }.filter { it.isNotBlank() }.sorted()
+        }
+    }
 }

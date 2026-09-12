@@ -23,6 +23,7 @@ import io.legado.app.ui.about.ReadRecordActivity
 import io.legado.app.ui.book.bookmark.AllBookmarkActivity
 import io.legado.app.ui.book.source.manage.BookSourceActivity
 import io.legado.app.ui.book.toc.rule.TxtTocRuleActivity
+import io.legado.app.ai.source.SourceHubUi
 import io.legado.app.ui.config.ConfigActivity
 import io.legado.app.ui.config.ConfigTag
 import io.legado.app.ui.dict.rule.DictRuleActivity
@@ -148,6 +149,7 @@ class MyFragment() : BaseFragment(R.layout.fragment_my_config), MainFragmentInte
                 "aiAssistant" -> startActivity<ConfigActivity> {
                     putExtra("configTag", ConfigTag.AI_CONFIG)
                 }
+                "importSourceMiao" -> SourceHubUi.launch(this)
                 "replaceManage" -> startActivity<ReplaceRuleActivity>()
                 "dictRuleManage" -> startActivity<DictRuleActivity>()
                 "txtTocRuleManage" -> startActivity<TxtTocRuleActivity>()

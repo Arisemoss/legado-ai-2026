@@ -12,6 +12,13 @@
         app:iconSpaceReserved="false" />
 
     <io.legado.app.lib.prefs.Preference
+        android:icon="@drawable/ic_cfg_source"
+        android:key="importSourceMiao"
+        android:summary="解析聚合页并批量导入书源（喵公子等）"
+        android:title="一键获取书源"
+        app:iconSpaceReserved="false" />
+
+    <io.legado.app.lib.prefs.Preference
         android:icon="@drawable/ic_ai_sessions"
         android:key="aiAssistant"
         android:summary="AI 对话/工具与模型配置（AI 增强版）"
