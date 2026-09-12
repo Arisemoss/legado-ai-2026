@@ -85,7 +85,7 @@ class DefaultAppController : AppController {
                 "eInk" to AppConfig.isEInkMode,
                 "showRss" to AppConfig.showRSS,
                 "threadCount" to AppConfig.threadCount,
-                "importBookPath" to AppConfig.importBookPath.orEmpty()
+                "importBookPath" to AppConfig.importBookPath.orEmpty(),
                 "themeMode" to AppConfig.themeMode,
                 "chineseConverterType" to AppConfig.chineseConverterType,
                 "ttsSpeechRate" to AppConfig.ttsSpeechRate,
