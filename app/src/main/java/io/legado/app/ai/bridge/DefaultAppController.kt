@@ -86,7 +86,7 @@ class DefaultAppController : AppController {
                 "showRss" to AppConfig.showRSS,
                 "threadCount" to AppConfig.threadCount,
                 "importBookPath" to AppConfig.importBookPath.orEmpty(),
-                "themeMode" to AppConfig.themeMode,
+                "themeMode" to AppConfig.themeMode.orEmpty(),
                 "chineseConverterType" to AppConfig.chineseConverterType,
                 "ttsSpeechRate" to AppConfig.ttsSpeechRate,
                 "readBrightness" to AppConfig.readBrightness,
