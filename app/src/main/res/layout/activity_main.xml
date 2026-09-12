@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+  <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -23,4 +28,15 @@
         app:labelVisibilityMode="unlabeled"
         app:menu="@menu/main_bnv" />
 
-</LinearLayout>
+    </LinearLayout>
+
+    <!-- AI 悬浮球（移植）：主页也可用，点击打开 AI 助手；可在设置中关闭 -->
+    <io.legado.app.ai.ui.AIFloatBallView
+        android:id="@+id/ai_float_ball"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="72dp"
+        android:layout_marginEnd="16dp" />
+
+</FrameLayout>

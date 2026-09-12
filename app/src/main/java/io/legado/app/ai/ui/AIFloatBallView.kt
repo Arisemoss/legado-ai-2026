@@ -13,6 +13,7 @@ import android.widget.ImageView
 import io.legado.app.R
 import io.legado.app.constant.PreferKey
 import io.legado.app.model.ReadBook
+import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.getPrefString
 import io.legado.app.utils.putPrefString
 
@@ -57,7 +58,14 @@ class AIFloatBallView @JvmOverloads constructor(
 
         contentDescription = "AI 助手"
         alpha = DOCK_ALPHA
+        refreshEnabled()
         post { restorePosition() }
+    }
+
+    /** 是否显示（设置可关闭；宿主在 onResume 调用即可即时生效） */
+    fun refreshEnabled() {
+        visibility =
+            if (context.getPrefBoolean(PreferKey.aiFloatBallEnabled, true)) View.VISIBLE else View.GONE
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

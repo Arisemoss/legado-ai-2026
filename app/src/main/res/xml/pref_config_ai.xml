@@ -66,6 +66,13 @@
         app:iconSpaceReserved="false" />
 
 
+    <androidx.preference.SwitchPreferenceCompat
+        android:key="ai_float_ball_enabled"
+        android:title="显示 AI 悬浮球"
+        android:summary="在主页与阅读页显示可拖拽的 AI 助手悬浮球"
+        android:defaultValue="true"
+        app:iconSpaceReserved="false" />
+
     <PreferenceCategory android:title="聊天背景（RikkaHub 风格）"
         app:iconSpaceReserved="false">
 

@@ -142,6 +142,11 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     }
 
 
+    override fun onResume() {
+        super.onResume()
+        binding.aiFloatBall.refreshEnabled()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleRequestTab(intent)
