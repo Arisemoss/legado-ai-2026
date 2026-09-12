@@ -120,8 +120,8 @@ class AiConfigFragment : PreferenceFragment() {
             pref.isEnabled = false
             pref.summary = "测试中…"
             viewLifecycleOwner.lifecycleScope.launch {
+                val cfg = ModelManager.getConfig()
                 val result = runCatching {
-                    val cfg = ModelManager.getConfig()
                     val client = OpenAIClient(
                         baseUrl = cfg.baseUrl,
                         apiKey = cfg.apiKey,
@@ -133,7 +133,7 @@ class AiConfigFragment : PreferenceFragment() {
                 }
                 pref.isEnabled = true
                 pref.summary = result.fold(
-                    onSuccess = { "✅ 连接成功（模型：${it.model}）" },
+                    onSuccess = { "✅ 连接成功（模型：${cfg.name}）" },
                     onFailure = { "❌ ${it.localizedMessage ?: it.javaClass.simpleName}" }
                 )
             }

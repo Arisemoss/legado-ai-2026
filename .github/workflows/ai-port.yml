@@ -3,6 +3,10 @@ name: AI Port Build
 on:
   push:
     branches: [ port-master, master ]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - 'LICENSE'
   workflow_dispatch:
 
 concurrency:
