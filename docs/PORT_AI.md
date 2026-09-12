@@ -41,3 +41,9 @@
 - `ModelManager.fetchModels(/models)` + 设置页自动拉取模型列表（选择/刷新/预设回退）。
 - `BookSourceHub`（解析 `yuedu://booksource/importonline` 深链→下载 JSON/TXT→`SourceHelp` 入库）+ `SourceHubUi`（我的页入口）+ AI 工具 `import_book_sources`。
 - 新增工具：`list_settings`、`manage_replace_rule`、`list_replace_rules`、`delete_book_source`；`set_setting` 白名单扩展。工具总数 27。
+## 第三批功能（2026-09）
+- `BookSourceImportActivity` + `item_source_hub.xml`：预扫描（`BookSourceHub.scan`）→ 勾选 → 批量导入（逐项状态/进度）。
+- `AiSetupWizardActivity`：首启向导（4 步）；`PreferKey.aiSetupDone/aiSetupShown`；MainActivity 首次引导。
+- `pref_config_ai.xml` 重写为 5 组；`AiConfigFragment` 改为复用 XML 声明键（测试连接/刷新模型/工具说明/日志入口）。
+- `SourceHealth` + `SourceHealthActivity`：批量检测（并发 4 / 12s / 上限 50）、选中失效、导出备份、确认删除。
+- 工具：新增 `add_book_to_shelf`（写确认）→ 总计 28；`search_books` 描述引导「先询问再加入书架」。
