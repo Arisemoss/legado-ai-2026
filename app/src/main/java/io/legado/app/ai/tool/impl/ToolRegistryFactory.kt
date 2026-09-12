@@ -38,5 +38,11 @@ fun buildRegistry(bridge: AiBridge): ToolRegistry {
     // 设置
     r.register(GetSettingTool(bridge))
     r.register(SetSettingTool(bridge))
+    r.register(ListSettingsTool(bridge))
+    // 替换净化
+    r.register(ListReplaceRulesTool(bridge))
+    r.register(ManageReplaceRuleTool(bridge))
+    // 书源删除
+    r.register(DeleteSourceTool(bridge))
     return r
 }

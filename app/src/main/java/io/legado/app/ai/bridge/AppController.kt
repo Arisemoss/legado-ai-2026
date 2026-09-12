@@ -29,4 +29,18 @@ interface AppController {
 
     /** 设置：写入受白名单控制的设置项（越界返回 error） */
     suspend fun setSetting(key: String, value: String): Map<String, Any>
-}
+
+    /** 替换净化：读取规则列表（可按名称/分组过滤） */
+    suspend fun listReplaceRules(keyword: String?): List<Map<String, Any>>
+
+    /** 替换净化：新增或更新规则（写库） */
+    suspend fun upsertReplaceRule(rule: Map<String, Any?>): Map<String, Any>
+
+    /** 替换净化：删除规则（写库） */
+    suspend fun deleteReplaceRule(id: Long): Map<String, Any>
+
+    /** 替换净化：启用/禁用规则（写库） */
+    suspend fun enableReplaceRule(id: Long, enabled: Boolean): Map<String, Any>
+
+    /** 书源：删除（写库） */
+    suspend fun deleteSource(url: String): Map<String, Any>}
