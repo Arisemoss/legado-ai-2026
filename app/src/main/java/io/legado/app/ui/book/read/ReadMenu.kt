@@ -32,6 +32,7 @@ import io.legado.app.lib.theme.buttonDisabledColor
 import io.legado.app.lib.theme.getPrimaryTextColor
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.lib.theme.primaryTextColor
+import io.legado.app.ai.ui.AgentHubActivity
 import io.legado.app.model.ReadBook
 import io.legado.app.ui.browser.WebViewActivity
 import io.legado.app.ui.widget.seekbar.SeekBarChangeListener
@@ -160,6 +161,15 @@ class ReadMenu @JvmOverloads constructor(
         bindEvent()
     }
 
+
+    /** 打开 AI 助手：携带当前书名/章节预设 */
+    private fun openAiAssistant() {
+        activity?.startActivity<AgentHubActivity> {
+            putExtra("preset_book", ReadBook.book?.name)
+            putExtra("preset_chapter", ReadBook.curTextChapter?.title)
+        }
+    }
+
     private fun initView(reset: Boolean = false) = binding.run {
         if (AppConfig.isNightTheme) {
             fabNightTheme.setImageResource(R.drawable.ic_daytime)
@@ -201,6 +211,9 @@ class ReadMenu @JvmOverloads constructor(
         fabReplaceRule.setColorFilter(textColor)
         fabNightTheme.backgroundTintList = bottomBackgroundList
         fabNightTheme.setColorFilter(textColor)
+        ivAiAssistant.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
+        tvAiAssistant.setTextColor(textColor)
+        llAiAssistant.setOnClickListener { openAiAssistant() }
         tvPre.setTextColor(textColor)
         tvNext.setTextColor(textColor)
         ivCatalog.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)

@@ -2,6 +2,7 @@
 
 package io.legado.app.ui.main
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.MenuItem
@@ -91,6 +92,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         upBottomMenu()
         initView()
         upHomePage()
+        handleRequestTab(intent)
         onBackPressedDispatcher.addCallback(this) {
             if (pagePosition != 0) {
                 binding.viewPagerMain.currentItem = 0
@@ -136,6 +138,22 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             binding.viewPagerMain.postDelayed(3000) {
                 viewModel.postLoad()
             }
+        }
+    }
+
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleRequestTab(intent)
+    }
+
+    /** 处理外部请求（如 AI 导航到书架）指定的 tab 切换 */
+    private fun handleRequestTab(intent: Intent?) {
+        val tab = intent?.getIntExtra("agent_select_tab", -1) ?: -1
+        if (tab < 0) return
+        val count = binding.viewPagerMain.adapter?.itemCount ?: 0
+        if (tab in 0 until count) {
+            binding.viewPagerMain.setCurrentItem(tab, false)
         }
     }
 

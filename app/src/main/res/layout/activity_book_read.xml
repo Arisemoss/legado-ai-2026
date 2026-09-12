@@ -50,4 +50,13 @@
         android:background="@color/background_menu"
         android:layout_gravity="bottom" />
 
+    <!-- AI 悬浮球（移植）：右下角可拖拽贴边，点击携书名/章节打开 AI 助手 -->
+    <io.legado.app.ai.ui.AIFloatBallView
+        android:id="@+id/ai_float_ball"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="120dp"
+        android:layout_marginEnd="16dp" />
+
 </FrameLayout>

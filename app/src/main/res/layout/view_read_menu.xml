@@ -411,6 +411,40 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
+                <LinearLayout
+                    android:id="@+id/ll_ai_assistant"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="AI 智能助手"
+                    android:focusable="true"
+                    android:orientation="vertical"
+                    android:paddingBottom="7dp">
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/iv_ai_assistant"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:adjustViewBounds="true"
+                        android:contentDescription="AI 智能助手"
+                        android:maxHeight="20dp"
+                        android:src="@drawable/ic_ai_sessions"
+                        app:tint="@color/primaryText" />
+
+                    <TextView
+                        android:id="@+id/tv_ai_assistant"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="3dp"
+                        android:singleLine="true"
+                        android:text="AI"
+                        android:textColor="@color/primaryText"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
                 <View
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
