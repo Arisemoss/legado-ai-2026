@@ -32,6 +32,7 @@ fun buildRegistry(bridge: AiBridge): ToolRegistry {
     r.register(RemoveBookTool(bridge))
     r.register(OpenSearchTool(bridge))
     r.register(ShowBookshelfTool(bridge))
+    r.register(AddBookToShelfTool(bridge))
     // 书源控制
     r.register(SetSourceEnabledTool(bridge))
     r.register(ImportBookSourcesTool())

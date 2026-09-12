@@ -4,7 +4,9 @@ import io.legado.app.data.appDb
 import io.legado.app.constant.PreferKey
 import io.legado.app.utils.putPrefBoolean
 import splitties.init.appCtx
+import io.legado.app.constant.BookType
 import io.legado.app.data.entities.ReplaceRule
+import io.legado.app.data.entities.SearchBook
 import io.legado.app.help.book.ContentProcessor
 import io.legado.app.help.config.AppConfig
 import kotlinx.coroutines.Dispatchers
@@ -64,6 +66,43 @@ class DefaultAppController : AppController {
             }
         }
 
+
+    override suspend fun addToShelf(book: Map<String, Any?>): Map<String, Any> =
+        withContext(Dispatchers.IO) {
+            val bookUrl = book["bookUrl"]?.toString()?.takeIf { it.isNotBlank() }
+                ?: return@withContext mapOf("ok" to false, "message" to "缺少 bookUrl")
+            val dao = appDb.bookDao
+            dao.getBook(bookUrl)?.let {
+                return@withContext mapOf(
+                    "ok" to true,
+                    "alreadyExists" to true,
+                    "message" to "《${it.name}》已在书架中"
+                )
+            }
+            val sb = SearchBook(
+                name = book["name"]?.toString().orEmpty(),
+                author = book["author"]?.toString().orEmpty(),
+                bookUrl = bookUrl,
+                origin = book["origin"]?.toString().orEmpty(),
+                originName = book["originName"]?.toString().orEmpty(),
+                tocUrl = book["tocUrl"]?.toString().orEmpty(),
+                kind = book["kind"]?.toString(),
+                coverUrl = book["coverUrl"]?.toString(),
+                intro = book["intro"]?.toString(),
+                type = (book["type"] as? Number)?.toInt() ?: BookType.text
+            )
+            val entity = sb.toBook()
+            if (entity.name.isBlank()) {
+                return@withContext mapOf("ok" to false, "message" to "缺少书名，无法加入书架")
+            }
+            dao.insert(entity)
+            mapOf(
+                "ok" to true,
+                "alreadyExists" to false,
+                "message" to "已加入书架：《${entity.name}》",
+                "bookUrl" to bookUrl
+            )
+        }
     override suspend fun enableSource(url: String, enabled: Boolean): Map<String, Any> =
         withContext(Dispatchers.IO) {
             val dao = appDb.bookSourceDao

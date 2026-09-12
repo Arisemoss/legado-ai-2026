@@ -13,7 +13,7 @@ class SearchBooksTool(private val fetcher: BookFetcher) : ToolDefinition {
     override val id = "search_books"
     override val info = ToolDefinitionInfo(
         name = "search_books",
-        description = "跨最多6个已启用书源（随机抽取）并行搜索书籍，返回书名/作者/来源",
+        description = "跨最多6个已启用书源（随机抽取）并行搜索书籍，返回书名/作者/来源；若要加入书架，请先询问用户是否加入，再调用 add_book_to_shelf",
         parameters = listOf(
             ToolParam("keyword", "string", "书名或作者关键词", required = true),
             ToolParam("limit", "integer", "返回条数，默认5", required = false)
@@ -45,7 +45,7 @@ class RecommendBooksTool(private val fetcher: BookFetcher) : ToolDefinition {
     override val id = "recommend_books"
     override val info = ToolDefinitionInfo(
         name = "recommend_books",
-        description = "根据书名推荐候选书籍",
+        description = "根据书名推荐候选书籍；若要加入书架，请先询问用户是否加入，再调用 add_book_to_shelf",
         parameters = listOf(
             ToolParam("name", "string", "书名关键词", required = true)
         )

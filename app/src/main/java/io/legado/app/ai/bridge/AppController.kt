@@ -21,6 +21,9 @@ interface AppController {
     suspend fun locateBook(bookName: String): Map<String, Any>      // 空 map 表示未入架
     suspend fun removeFromShelf(bookName: String): Map<String, Any>
 
+
+    /** 书架：把搜索结果加入书架（写库） */
+    suspend fun addToShelf(book: Map<String, Any?>): Map<String, Any>
     /** 书源：启用/禁用（写库） */
     suspend fun enableSource(url: String, enabled: Boolean): Map<String, Any>
 
