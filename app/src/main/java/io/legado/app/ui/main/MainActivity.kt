@@ -44,9 +44,11 @@ import io.legado.app.ui.main.my.MyFragment
 import io.legado.app.ui.main.rss.RssFragment
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.ui.widget.text.BadgeView
+import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.isCreated
 import io.legado.app.utils.navigationBarHeight
 import io.legado.app.utils.observeEvent
+import io.legado.app.utils.putPrefBoolean
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.showDialogFragment
