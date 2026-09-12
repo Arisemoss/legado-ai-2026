@@ -10,6 +10,7 @@ import androidx.preference.ListPreference
 import androidx.preference.Preference
 import io.legado.app.R
 import io.legado.app.ai.ModelManager
+import io.legado.app.ai.ui.AiLogActivity
 import io.legado.app.ai.model.AiModelConfig
 import io.legado.app.ai.model.ChatMessage
 import io.legado.app.ai.runtime.OpenAIClient
@@ -113,11 +114,7 @@ class AiConfigFragment : PreferenceFragment() {
 
     /** 「测试连接」：按当前配置发起一次最小 /chat/completions 请求 */
     private fun addTestConnectionPreference() {
-        val pref = Preference(requireContext()).apply {
-            key = "ai_test_conn"
-            title = "测试连接"
-            summary = "验证 Base URL / Key / 模型是否可用"
-        }
+        val pref = findPreference<Preference>("ai_test_conn") ?: return
         pref.setOnPreferenceClickListener {
             pref.isEnabled = false
             pref.summary = "测试中…"
@@ -141,20 +138,15 @@ class AiConfigFragment : PreferenceFragment() {
             }
             true
         }
-        preferenceScreen.addPreference(pref)
     }
 
     private var modelPick: ListPreference? = null
     private var refreshPref: Preference? = null
 
-    /** 模型选择器 + 刷新按钮：从 /models 拉取真实模型列表 */
+    /** 模型选择器 + 刷新按钮（键由 pref_config_ai.xml 声明） */
     private fun initModelPicker() {
-        val pick = ListPreference(requireContext()).apply {
-            key = "ai_model_pick"
-            title = "选择模型（自动获取）"
-            summary = "填入 API Key 后自动拉取；也可在上方手动填写模型名"
-        }
-        pick.setOnPreferenceChangeListener { _, newValue ->
+        modelPick = findPreference("ai_model_pick")
+        modelPick?.setOnPreferenceChangeListener { _, newValue ->
             val m = newValue as? String
             if (!m.isNullOrBlank()) {
                 putPrefString(PreferKey.aiModel, m)
@@ -162,31 +154,30 @@ class AiConfigFragment : PreferenceFragment() {
             }
             true
         }
-        val refresh = Preference(requireContext()).apply {
-            key = "ai_refresh_models"
-            title = "刷新模型列表"
-            summary = "需要已填 Base URL 与 API Key"
-        }
-        refresh.setOnPreferenceClickListener {
+        refreshPref = findPreference("ai_refresh_models")
+        refreshPref?.setOnPreferenceClickListener {
             refreshModels()
             true
         }
-        preferenceScreen.addPreference(pick)
-        preferenceScreen.addPreference(refresh)
-        modelPick = pick
-        refreshPref = refresh
 
         findPreference<EditTextPreference>(PreferKey.aiBaseUrl)?.setOnPreferenceChangeListener { _, v ->
             val url = (v as? String).orEmpty()
-            if (url.isNotBlank()) view?.postDelayed({ refreshModels() }, 200)
+            if (url.isNotBlank()) view?.postDelayed({ refreshModels() }, 250)
             true
         }
         findPreference<EditTextPreference>(PreferKey.aiModel)?.let { m ->
-            m.setOnPreferenceChangeListener { _, v ->
-                val name = (v as? String).orEmpty()
-                if (name.isNotBlank()) view?.postDelayed({ upAllSummary() }, 100)
+            m.setOnPreferenceChangeListener { _, _ ->
+                view?.postDelayed({ upAllSummary() }, 100)
                 true
             }
+        }
+        findPreference<Preference>("ai_tools_info")?.setOnPreferenceClickListener {
+            toast("共 28 个工具；写操作（改书源/书架/设置/净化）都必须你点「同意」")
+            true
+        }
+        findPreference<Preference>("ai_logs_entry")?.setOnPreferenceClickListener {
+            startActivity(Intent(requireContext(), AiLogActivity::class.java))
+            true
         }
         refreshModels()
     }

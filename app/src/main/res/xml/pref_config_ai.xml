@@ -2,87 +2,116 @@
 <androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <androidx.preference.ListPreference
-        android:key="ai_provider"
-        android:title="服务商预设"
-        android:summary="选择服务商可自动填充 Base URL 与推荐模型"
-        android:defaultValue="deepseek"
-        app:entries="@array/ai_provider_entries"
-        app:entryValues="@array/ai_provider_values"
-        app:iconSpaceReserved="false" />
+    <PreferenceCategory android:title="1 · 服务商与凭据" app:iconSpaceReserved="false">
 
-    <androidx.preference.EditTextPreference
-        android:key="ai_base_url"
-        android:title="服务商 Base URL"
-        android:summary="选服务商自动填充，也可自定"
-        android:defaultValue="https://api.openai.com/v1"
-        app:iconSpaceReserved="false" />
+        <androidx.preference.ListPreference
+            android:key="ai_provider"
+            android:title="服务商预设"
+            android:summary="选择后自动填充 Base URL 与推荐模型"
+            android:defaultValue="deepseek"
+            android:entries="@array/ai_provider_entries"
+            android:entryValues="@array/ai_provider_values"
+            app:iconSpaceReserved="false" />
 
-    <androidx.preference.EditTextPreference
-        android:key="ai_api_key"
-        android:title="API Key"
-        android:summary="将加密存储于系统密钥库"
-        android:inputType="textPassword"
-        app:iconSpaceReserved="false" />
+        <androidx.preference.EditTextPreference
+            android:key="ai_base_url"
+            android:title="Base URL"
+            android:summary="OpenAI 兼容端点，如 https://api.deepseek.com/v1"
+            android:defaultValue="https://api.deepseek.com/v1"
+            app:iconSpaceReserved="false" />
 
-    <androidx.preference.EditTextPreference
-        android:key="ai_model"
-        android:title="模型名"
-        android:defaultValue="gpt-4o-mini"
-        app:iconSpaceReserved="false" />
+        <androidx.preference.EditTextPreference
+            android:key="ai_api_key"
+            android:title="API Key"
+            android:summary="加密存储于系统密钥库（Android Keystore）"
+            android:inputType="textPassword"
+            app:iconSpaceReserved="false" />
 
-    <androidx.preference.SwitchPreferenceCompat
-        android:key="ai_stream"
-        android:title="流式输出"
-        android:summary="开启后分块流式返回，打字机效果"
-        android:defaultValue="false"
-        app:iconSpaceReserved="false" />
+        <androidx.preference.Preference
+            android:key="ai_test_conn"
+            android:title="测试连接"
+            android:summary="按当前配置请求一次 /chat/completions"
+            app:iconSpaceReserved="false" />
 
-    <ListPreference
-        android:key="ai_tool_protocol"
-        android:title="工具调用协议"
-        android:summary="auto=原生+文本双通道；text 兼容不支持函数调用的服务商"
-        android:defaultValue="auto"
-        android:entries="@array/ai_tool_protocol_entries"
-        android:entryValues="@array/ai_tool_protocol_values"
-        app:iconSpaceReserved="false" />
+    </PreferenceCategory>
 
-    <androidx.preference.EditTextPreference
-        android:key="ai_timeout"
-        android:title="轮询超时(毫秒)"
-        android:defaultValue="120000"
-        app:iconSpaceReserved="false" />
+    <PreferenceCategory android:title="2 · 模型" app:iconSpaceReserved="false">
 
-    <androidx.preference.EditTextPreference
-        android:key="ai_max_rounds"
-        android:title="最大工具轮数"
-        android:defaultValue="5"
-        app:iconSpaceReserved="false" />
+        <androidx.preference.EditTextPreference
+            android:key="ai_model"
+            android:title="模型名（手填）"
+            android:summary="也可从下方列表自动获取"
+            android:defaultValue="deepseek-chat"
+            app:iconSpaceReserved="false" />
 
-    <androidx.preference.EditTextPreference
-        android:key="ai_session_window"
-        android:title="会话消息窗口"
-        android:defaultValue="50"
-        app:iconSpaceReserved="false" />
+        <androidx.preference.ListPreference
+            android:key="ai_model_pick"
+            android:title="选择模型（自动获取）"
+            android:summary="填入 API Key 后自动请求 /models"
+            app:iconSpaceReserved="false" />
 
+        <androidx.preference.Preference
+            android:key="ai_refresh_models"
+            android:title="刷新模型列表"
+            android:summary="需要已填 Base URL 与 API Key"
+            app:iconSpaceReserved="false" />
 
-    <androidx.preference.SwitchPreferenceCompat
-        android:key="ai_float_ball_enabled"
-        android:title="显示 AI 悬浮球"
-        android:summary="在主页与阅读页显示可拖拽的 AI 助手悬浮球"
-        android:defaultValue="true"
-        app:iconSpaceReserved="false" />
+    </PreferenceCategory>
 
-    <PreferenceCategory android:title="聊天背景（RikkaHub 风格）"
-        app:iconSpaceReserved="false">
+    <PreferenceCategory android:title="3 · 高级" app:iconSpaceReserved="false">
+
+        <androidx.preference.ListPreference
+            android:key="ai_tool_protocol"
+            android:title="工具调用协议"
+            android:summary="auto=原生+文本双通道；text 兼容不支持函数调用的服务商"
+            android:defaultValue="auto"
+            android:entries="@array/ai_tool_protocol_entries"
+            android:entryValues="@array/ai_tool_protocol_values"
+            app:iconSpaceReserved="false" />
+
+        <androidx.preference.EditTextPreference
+            android:key="ai_timeout"
+            android:title="请求超时(毫秒)"
+            android:defaultValue="120000"
+            app:iconSpaceReserved="false" />
+
+        <androidx.preference.EditTextPreference
+            android:key="ai_max_rounds"
+            android:title="最大工具轮数"
+            android:defaultValue="5"
+            app:iconSpaceReserved="false" />
+
+        <androidx.preference.EditTextPreference
+            android:key="ai_session_window"
+            android:title="会话消息窗口"
+            android:defaultValue="50"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="4 · 外观与入口" app:iconSpaceReserved="false">
+
+        <androidx.preference.SwitchPreferenceCompat
+            android:key="ai_float_ball_enabled"
+            android:title="显示 AI 悬浮球"
+            android:summary="主页与阅读页右下角显示可拖拽的 AI 助手悬浮球"
+            android:defaultValue="true"
+            app:iconSpaceReserved="false" />
+
+        <androidx.preference.SwitchPreferenceCompat
+            android:key="ai_stream"
+            android:title="流式输出"
+            android:summary="分块返回，打字机效果"
+            android:defaultValue="true"
+            app:iconSpaceReserved="false" />
 
         <androidx.preference.Preference
             android:key="ai_chat_bg_pick"
-            android:title="选择背景图片"
+            android:title="选择聊天背景图"
             android:summary="从相册选择图片作为 AI 对话背景"
             app:iconSpaceReserved="false" />
 
-        <ListPreference
+        <androidx.preference.ListPreference
             android:key="ai_chat_bg_opacity"
             android:title="背景图不透明度"
             android:defaultValue="60"
@@ -93,14 +122,30 @@
         <androidx.preference.SwitchPreferenceCompat
             android:key="ai_chat_bg_gradient"
             android:title="极光渐变背景"
-            android:summary="Gemini 风动态流光渐变，优先于背景图片"
+            android:summary="优先于背景图片"
             android:defaultValue="false"
             app:iconSpaceReserved="false" />
 
         <androidx.preference.Preference
             android:key="ai_chat_bg_clear"
             android:title="清除自定义背景"
-            android:summary="恢复默认纯色背景"
+            android:summary="恢复默认"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="5 · 工具与安全" app:iconSpaceReserved="false">
+
+        <androidx.preference.Preference
+            android:key="ai_tools_info"
+            android:title="AI 工具清单（28 个）"
+            android:summary="搜书/读书/懂书/书源/书架/设置；所有写操作都需要你在聊天里点「同意」"
+            app:iconSpaceReserved="false" />
+
+        <androidx.preference.Preference
+            android:key="ai_logs_entry"
+            android:title="查看运行日志"
+            android:summary="模型请求/流式/工具/错误全链路记录，可分享排障"
             app:iconSpaceReserved="false" />
 
     </PreferenceCategory>

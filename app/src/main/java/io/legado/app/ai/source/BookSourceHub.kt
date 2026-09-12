@@ -1,6 +1,7 @@
 package io.legado.app.ai.source
 
 import io.legado.app.ai.log.AiLog
+import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
 import io.legado.app.help.http.okHttpClient
 import io.legado.app.help.source.SourceHelp
@@ -98,4 +99,41 @@ object BookSourceHub {
             val name = clean.substringAfterLast('/')
             URLDecoder.decode(name, "UTF-8").ifBlank { clean }
         }.getOrDefault(src)
+
+    /** 预扫描结果：条目内含书源数量、最后更新时间，以及与本地库的比对状态 */
+    data class ScanResult(
+        val entry: Entry,
+        val total: Int,
+        val newestUpdate: Long,
+        val existsLocal: Boolean,
+        val canUpdate: Boolean,
+        val error: String? = null
+    )
+
+    /** 下载并解析单条书源（供导入与预扫描共用） */
+    suspend fun downloadText(src: String): String {
+        val req = Request.Builder().url(src).get().build()
+        return okHttpClient.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) throw RuntimeException("HTTP ${resp.code}")
+            resp.body?.string().orEmpty()
+        }
+    }
+
+    /** 预扫描：解析条目内书源数量/更新时间，并判断本地是否已存在、是否可更新 */
+    suspend fun scan(entry: Entry): ScanResult = runCatching {
+        val text = downloadText(entry.src)
+        val list = parseSources(text)
+        val newest = list.maxOfOrNull { it.lastUpdateTime } ?: 0L
+        val firstUrl = list.firstOrNull()?.bookSourceUrl.orEmpty()
+        val local = if (firstUrl.isBlank()) null else appDb.bookSourceDao.getBookSourcePart(firstUrl)
+        ScanResult(
+            entry = entry,
+            total = list.size,
+            newestUpdate = newest,
+            existsLocal = local != null,
+            canUpdate = local != null && newest > local.lastUpdateTime
+        )
+    }.getOrElse { e ->
+        ScanResult(entry, 0, 0L, false, false, e.localizedMessage ?: e.javaClass.simpleName)
+    }
 }

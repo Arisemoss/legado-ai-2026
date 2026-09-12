@@ -200,6 +200,8 @@ object PreferKey {
     const val aiChatBgOpacity = "ai_chat_bg_opacity"
     const val aiChatBgGradient = "ai_chat_bg_gradient"
     const val aiToolProtocol = "ai_tool_protocol"
+    const val aiSetupDone = "ai_setup_done"
+    const val aiSetupShown = "ai_setup_shown"
     const val aiFloatBallEnabled = "ai_float_ball_enabled"
     const val aiFloatBallSide = "ai_float_ball_side"
     const val aiFloatBallYRatio = "ai_float_ball_y_ratio"

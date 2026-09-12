@@ -529,6 +529,12 @@
             android:name=".ai.ui.AgentHubActivity"
             android:windowSoftInputMode="adjustResize" />
         <activity android:name=".ai.ui.AiLogActivity" />
+        <!-- 一键获取书源（聚合页导入页） -->
+        <activity android:name=".ai.source.BookSourceImportActivity" />
+        <!-- 书源可用性检测与清理 -->
+        <activity android:name=".ai.source.SourceHealthActivity" />
+        <!-- 首次使用的 AI 配置向导 -->
+        <activity android:name=".ai.ui.AiSetupWizardActivity" />
     </application>
 
     <queries>

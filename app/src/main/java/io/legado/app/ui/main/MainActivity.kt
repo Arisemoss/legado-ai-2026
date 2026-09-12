@@ -92,6 +92,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         upBottomMenu()
         initView()
         upHomePage()
+        maybeShowAiSetup()
         handleRequestTab(intent)
         onBackPressedDispatcher.addCallback(this) {
             if (pagePosition != 0) {
@@ -141,6 +142,16 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
     }
 
+
+
+    /** 首次进入：未配置 AI 时引导一次（可跳过，不再骚扰） */
+    private fun maybeShowAiSetup() {
+        if (getPrefBoolean(PreferKey.aiSetupDone, false)) return
+        if (getPrefBoolean(PreferKey.aiSetupShown, false)) return
+        if (!io.legado.app.ai.runtime.AiKeyStore.getApiKey().isNullOrBlank()) return
+        putPrefBoolean(PreferKey.aiSetupShown, true)
+        startActivity(Intent(this, io.legado.app.ai.ui.AiSetupWizardActivity::class.java))
+    }
 
     override fun onResume() {
         super.onResume()
