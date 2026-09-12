@@ -36,3 +36,8 @@
 ## 已知技术债
 - 桥层对 2026 API 为「最小可用」适配：搜索/正文直接映射到 `WebBook.searchBookAwait/getContentAwait`，未复刻旧版的 scope 复用与全部超时策略细节。
 - `AiKeyStore` 在 API<23 或解密失败时仍回退明文（沿用旧实现）。
+## 第二批功能（2026-09）
+- 主页悬浮球（`activity_main.xml` FrameLayout 包裹挂载）+ `ai_float_ball_enabled` 开关；主页/阅读页 `onResume` 即时生效。
+- `ModelManager.fetchModels(/models)` + 设置页自动拉取模型列表（选择/刷新/预设回退）。
+- `BookSourceHub`（解析 `yuedu://booksource/importonline` 深链→下载 JSON/TXT→`SourceHelp` 入库）+ `SourceHubUi`（我的页入口）+ AI 工具 `import_book_sources`。
+- 新增工具：`list_settings`、`manage_replace_rule`、`list_replace_rules`、`delete_book_source`；`set_setting` 白名单扩展。工具总数 27。
