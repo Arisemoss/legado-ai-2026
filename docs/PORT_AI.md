@@ -21,12 +21,17 @@
 ## 分支
 - `master`（默认）：移植主线；`port-master`：同名备份分支。
 
-## 待办（未完成项）
-1. 阅读器内入口：`ReadMenu` 的 AI 助手按钮与阅读页悬浮球（`AIFloatBallView` 挂载）尚未接线。
-2. `MainActivity` 对 `EXTRA_SELECT_TAB`（AI 导航跳书架）尚未处理。
-3. AI 设置页「测试连接」按钮为占位（原实现依赖旧 ModelManager.chatCompletion）。
-4. `exportSchema` 已置 true；如需提交 Room schema 快照，请在本地/CI 生成 `app/schemas/io.legado.app.data.AppDatabase/76.json` 后入库。
-5. 正式签名包：配置 Secrets 后跑 release（沿用 base `RELEASE_KEY_*` 模式）。
+## 已完成接线（2026-09-12 更新）
+- AI Hub 入口：阅读页右下角 **AI 悬浮球**（activity_book_read.xml）+ 阅读菜单 **AI 项**（view_read_menu.xml / ReadMenu.openAiAssistant，携书名与章节预设）。
+- MainActivity 处理 agent_select_tab（AI 导航跳书架；旧版 ViewPager 用 adapter.count）。
+- AI 设置页 **测试连接** 按钮（OpenAIClient 最小 ping，显示 ✅/❌ 与模型名）。
+- CI 优化：matrix [ai, app]；单测仅在 ai job 执行；纯文档提交（docs/**、**.md）不触发构建。
+
+## 待办（剩余可选/需真机）
+1. **真机冒烟**：按 docs/SMOKE_TEST.md 安装 ai-debug APK，走对话/工具/确认流。
+2. app/schemas/io.legado.app.data.AppDatabase/76.json 入库（KSP 生成后提交）。
+3. 正式签名包：配置 Secrets 后跑 release（R8 keep 已配）。
+4. 阅读页悬浮球可关闭开关（当前默认常显）。
 
 ## 已知技术债
 - 桥层对 2026 API 为「最小可用」适配：搜索/正文直接映射到 `WebBook.searchBookAwait/getContentAwait`，未复刻旧版的 scope 复用与全部超时策略细节。
