@@ -9,7 +9,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
+import android.widget.LinearLayout
 import android.widget.ListView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -18,7 +20,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.ai.bridge.AppNav
+import io.legado.app.ai.model.SuggestedAction
 import io.legado.app.ai.model.ToolEvent
+import io.legado.app.ai.source.SourceHealthActivity
 import io.legado.app.ai.tool.AiPreset
 import io.legado.app.base.BaseActivity
 import io.legado.app.constant.PreferKey
@@ -33,9 +37,11 @@ import io.legado.app.databinding.AiItemToolBinding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.ui.book.read.ReadBookActivity
 import io.legado.app.ui.book.search.SearchActivity
+import io.legado.app.ui.book.source.manage.BookSourceActivity
 import io.legado.app.ui.config.ConfigActivity
 import io.legado.app.ui.config.ConfigTag
 import io.legado.app.ui.main.MainActivity
+import io.legado.app.ui.replace.ReplaceRuleActivity
 import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.getPrefString
 import io.legado.app.utils.viewbindingdelegate.viewBinding
@@ -406,6 +412,45 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
         }
     }
 
+    /**
+     * 建议动作点击路由：
+     *  - prompt → 把话术发给 Agent（写操作仍会弹确认卡，不存在绕过确认的写库路径）
+     *  - 其余 → 纯导航（阅读页/书架/书源/健康检测/替换规则/设置/搜索）
+     */
+    private fun onSuggestedAction(action: SuggestedAction) {
+        when (action.kind) {
+            SuggestedAction.KIND_PROMPT -> {
+                if (vm.isBusy()) {
+                    toast("AI 正在回答，请稍后再点")
+                    return
+                }
+                if (action.payload.isBlank()) return
+                streamingStartMs = System.currentTimeMillis()
+                vm.send(action.payload)
+            }
+            SuggestedAction.KIND_READER ->
+                if (action.payload.isBlank()) {
+                    toast("未定位到《${action.extra}》，可能未加入书架")
+                } else {
+                    openReader(AppNav.OpenBook(action.payload, action.extra.ifBlank { null }))
+                }
+            SuggestedAction.KIND_SHELF -> openBookshelf()
+            SuggestedAction.KIND_SEARCH ->
+                startActivity(Intent(this, SearchActivity::class.java).putExtra("key", action.payload))
+            SuggestedAction.KIND_SOURCES ->
+                startActivity(Intent(this, BookSourceActivity::class.java))
+            SuggestedAction.KIND_HEALTH ->
+                startActivity(Intent(this, SourceHealthActivity::class.java))
+            SuggestedAction.KIND_REPLACE ->
+                startActivity(Intent(this, ReplaceRuleActivity::class.java))
+            SuggestedAction.KIND_SETTINGS ->
+                startActivity(
+                    Intent(this, ConfigActivity::class.java)
+                        .putExtra("configTag", action.payload.ifBlank { ConfigTag.OTHER_CONFIG })
+                )
+        }
+    }
+
     private fun toast(msg: String) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
@@ -519,6 +564,41 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
                     b.tvToolStateIcon.text = "❌"; b.tvToolState.text = "出错"
                     b.tvToolState.setTextColor(color(R.color.ai_error_text))
                 }
+            }
+            bindActions(b, card)
+        }
+
+        /**
+         * 建议动作：把「工具结果」变成「下一步能点的按钮」。
+         * 只读动作直接跳页；写操作只发一句话给 Agent，由 manualConfirm 工具弹确认卡，绝不静默写库。
+         */
+        private fun bindActions(b: AiItemToolBinding, card: ChatRow.ToolCard) {
+            val box = b.llToolActions
+            box.removeAllViews()
+            val show = card.actions.isNotEmpty() &&
+                card.phase != ToolEvent.PHASE_RUNNING &&
+                card.phase != ToolEvent.PHASE_CONFIRM &&
+                card.phase != ToolEvent.PHASE_DENIED
+            b.svToolActions.visibility = if (show) View.VISIBLE else View.GONE
+            if (!show) return
+            val density = resources.displayMetrics.density
+            for (action in card.actions) {
+                val chip = TextView(this@AgentHubActivity)
+                chip.text = action.label
+                chip.textSize = 12f
+                chip.setTextColor(color(R.color.ai_chip_text))
+                chip.setBackgroundResource(R.drawable.ai_bg_chip)
+                val padH = (10 * density).toInt()
+                val padV = (4 * density).toInt()
+                chip.setPadding(padH, padV, padH, padV)
+                chip.setOnClickListener { onSuggestedAction(action) }
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                lp.marginEnd = (6 * density).toInt()
+                chip.layoutParams = lp
+                box.addView(chip)
             }
         }
 

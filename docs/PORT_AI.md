@@ -16,7 +16,7 @@
 ## 验证证据（GitHub Actions）
 - 工作流：`.github/workflows/ai-port.yml`（push master/port-master 触发；matrix `[ai, app]`）。
 - 最新绿：commit `f08c1c0da` → `testAiDebugUnitTest` + `assembleAiDebug` + `assembleAppDebug` 全部 SUCCESS；产物 `ai-debug-apk`（≈30MB）。
-- 单测：`ai/model/AgentErrorTest`、`ai/runtime/OpenAIClientTest`、`ai/runtime/ApprovalBusTest`、`ai/tool/TextToolCallParserTest`。
+- 单测：`ai/model/AgentErrorTest`、`ai/runtime/OpenAIClientTest`、`ai/runtime/ApprovalBusTest`、`ai/tool/TextToolCallParserTest`、`ai/tool/SuggestionEngineTest`。
 
 ## 分支
 - `master`（默认）：移植主线；`port-master`：同名备份分支。
@@ -50,3 +50,11 @@
 ## 第四批功能（P1 工具，2026-09）
 - 桥层：`addToShelfBatch`、`importReplaceRules`（URL/JSON）、`resetSetting`（白名单默认值）。
 - 工具：`batch_add_to_shelf`、`test_sources_batch`、`import_replace_rules`、`reset_setting`（工具总数 32）。
+
+## 第五批功能（工具结果可操作化，2026-09）
+- 新增 `ai/model/SuggestedAction.kt` + `ai/tool/SuggestionEngine.kt`：从「工具 id + 参数 + 结果 JSON」派生建议动作（≤3 条）；非法 JSON / 字段缺失 / 未知工具一律返回空列表，绝不抛异常影响工具流水线。
+- 透传链路：`ToolResult → AgentRuntime.suggestionsFor() → ToolEvent.actions → ChatRow.ToolCard.actions → ai_item_tool.xml(sv_tool_actions/ll_tool_actions)`；写操作在 `onApproved` 后补发一次终态事件，卡片由「已确认，正在写入」推进到真实写入结果（耗时为提案+写入两段实测）。
+- 安全红线：动作 kind 仅 `prompt/reader/shelf/sources/health/replace/settings/search`，**没有直接写库动作**；写操作统一 `KIND_PROMPT` 交回 Agent，再由 `manualConfirm` 工具弹确认卡——快捷按钮无法绕过两阶段确认（单测有专项断言）。
+- 修复断链：`DefaultBookFetcher.search` 结果补全 `bookUrl/origin/originName/tocUrl/coverUrl/intro/kind/type`（此前只有 name/author/from，`add_book_to_shelf` 拿不到 bookUrl 必然失败）；`search_books` 工具描述同步说明字段用途。
+- UI：工具卡片下方新增横向可滚动的建议按钮条（复用 `ai_bg_chip`），运行中/待确认/已拒绝/失败态不显示。
+- 单测：`app/src/test/java/io/legado/app/ai/tool/SuggestionEngineTest.kt`（10 例）。

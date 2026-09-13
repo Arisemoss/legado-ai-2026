@@ -11,6 +11,7 @@ package io.legado.app.ai.model
  * @param argsPreview 参数摘要（截断后的 JSON 文本）
  * @param detail   结果/错误详情预览
  * @param elapsedMs 该次调用耗时（running 阶段为 0）
+ * @param actions  建议动作：结果阶段由 SuggestionEngine 派生，UI 渲染为快捷按钮
  */
 data class ToolEvent(
     val seq: Long,
@@ -19,7 +20,8 @@ data class ToolEvent(
     val phase: String,
     val argsPreview: String = "",
     val detail: String? = null,
-    val elapsedMs: Long = 0L
+    val elapsedMs: Long = 0L,
+    val actions: List<SuggestedAction> = emptyList()
 ) {
     companion object {
         const val PHASE_RUNNING = "running"

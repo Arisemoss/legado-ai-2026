@@ -3,13 +3,16 @@ package io.legado.app.ai.runtime
 import io.legado.app.ai.model.ChatMessage
 import io.legado.app.ai.model.FunctionCall
 import io.legado.app.ai.model.ToolCall
+import io.legado.app.ai.model.ToolDefinition
 import io.legado.app.ai.model.ToolResult
 import io.legado.app.ai.model.ToolResultState
 import io.legado.app.ai.model.AgentError
 import io.legado.app.ai.model.AgentErrorCode
+import io.legado.app.ai.model.SuggestedAction
 import io.legado.app.ai.model.ToolEvent
 import io.legado.app.ai.log.AiLog
 import io.legado.app.ai.tool.ConfirmRequest
+import io.legado.app.ai.tool.SuggestionEngine
 import io.legado.app.ai.tool.TextToolCallParser
 import io.legado.app.ai.tool.ToolContext
 import io.legado.app.ai.tool.ToolRegistry
@@ -64,7 +67,8 @@ class AgentRuntime(
         phase: String,
         argsPreview: String = "",
         detail: String? = null,
-        elapsedMs: Long = 0L
+        elapsedMs: Long = 0L,
+        actions: List<SuggestedAction> = emptyList()
     ) {
         ctx.onToolEvent.value = ToolEvent(
             seq = ++eventSeq,
@@ -73,9 +77,14 @@ class AgentRuntime(
             phase = phase,
             argsPreview = argsPreview,
             detail = detail,
-            elapsedMs = elapsedMs
+            elapsedMs = elapsedMs,
+            actions = actions
         )
     }
+
+    /** 结果阶段的建议动作：出错时不给（避免引导用户在失败结果上继续操作） */
+    private fun suggestionsFor(def: ToolDefinition, args: Map<String, Any?>, result: ToolResult) =
+        if (result.error == null) SuggestionEngine.suggest(def.id, args, result.text) else emptyList()
 
     private fun previewArgs(args: Map<String, Any>): String =
         runCatching { Gson().toJson(args) }.getOrDefault(args.toString()).take(160)
@@ -207,6 +216,7 @@ class AgentRuntime(
                                     detail = if (approved) "已确认，正在写入" else "用户拒绝执行",
                                     elapsedMs = elapsed
                                 )
+                                val writeStartMs = System.currentTimeMillis()
                                 val finalResult = if (approved) {
                                     try {
                                         res.def.onApproved(ctx, res.args)
@@ -228,6 +238,16 @@ class AgentRuntime(
                                         error = AgentError(AgentErrorCode.NO_PERMISSION, "user rejected")
                                     )
                                 }
+                                // 写操作落库/拒绝后补发一次终态事件：卡片从「已确认，正在写入」
+                                // 推进到真实写入结果，并附带下一步建议动作
+                                postEvent(
+                                    ctx, calls[i].id, res.def.id,
+                                    if (finalResult.error != null) ToolEvent.PHASE_ERROR else ToolEvent.PHASE_RESULT,
+                                    argsPreview = previewArgs(res.args),
+                                    detail = finalResult.text.take(240),
+                                    elapsedMs = elapsed + (System.currentTimeMillis() - writeStartMs),
+                                    actions = if (approved) suggestionsFor(res.def, res.args, finalResult) else emptyList()
+                                )
                                 messages += executor.toolMessage(call, finalResult)
                             }
                             else -> {
@@ -235,7 +255,8 @@ class AgentRuntime(
                                     ctx, calls[i].id, res.def.id,
                                     if (result.error != null) ToolEvent.PHASE_ERROR else ToolEvent.PHASE_RESULT,
                                     detail = result.text.take(240),
-                                    elapsedMs = elapsed
+                                    elapsedMs = elapsed,
+                                    actions = suggestionsFor(res.def, res.args, result)
                                 )
                                 messages += executor.toolMessage(call, result)
                             }

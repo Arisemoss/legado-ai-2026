@@ -72,9 +72,19 @@ class DefaultBookFetcher : BookFetcher {
                 .filter { seen.add(it.name) }   // 按书源优先级去重
                 .take(limit)
                 .map { book ->
+                    // 字段必须齐全：add_book_to_shelf 需要 bookUrl/origin/originName/tocUrl 等，
+                    // 只给「书名+作者」会让模型无从下手（搜索结果无法直接加入书架）
                     mapOf(
                         "name" to book.name,
                         "author" to book.author,
+                        "bookUrl" to book.bookUrl,
+                        "origin" to book.origin,
+                        "originName" to book.originName.ifBlank { book.origin },
+                        "tocUrl" to book.tocUrl,
+                        "coverUrl" to book.coverUrl.orEmpty(),
+                        "intro" to book.intro.orEmpty().take(120),
+                        "kind" to book.kind.orEmpty(),
+                        "type" to book.type,
                         "from" to (book.originName.ifBlank { book.origin })
                     )
                 }

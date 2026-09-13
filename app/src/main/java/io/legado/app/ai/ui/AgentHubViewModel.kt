@@ -7,6 +7,7 @@ import io.legado.app.ai.log.AiLog
 import io.legado.app.ai.model.AiProviderPresets
 import io.legado.app.ai.model.AiModelConfig
 import io.legado.app.ai.model.ChatMessage
+import io.legado.app.ai.model.SuggestedAction
 import io.legado.app.ai.model.ToolEvent
 import io.legado.app.ai.runtime.AgentResult
 import io.legado.app.ai.runtime.AgentResultState
@@ -47,7 +48,8 @@ sealed class ChatRow {
         val argsPreview: String,
         val phase: String,
         val detail: String?,
-        val elapsedMs: Long
+        val elapsedMs: Long,
+        val actions: List<SuggestedAction> = emptyList()
     ) : ChatRow()
 
     /** 错误/状态提示条 */
@@ -382,7 +384,8 @@ class AgentHubViewModel(
             argsPreview = ev.argsPreview,
             phase = ev.phase,
             detail = ev.detail,
-            elapsedMs = ev.elapsedMs
+            elapsedMs = ev.elapsedMs,
+            actions = ev.actions
         )
         if (existingIdx >= 0) list[existingIdx] = card else list.add(card)
         messages.value = list

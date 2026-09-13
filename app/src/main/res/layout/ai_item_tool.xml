@@ -71,5 +71,21 @@
             android:textColor="@color/ai_text_sub"
             android:textSize="11sp"
             android:visibility="gone" />
+
+        <!-- 建议动作快捷按钮：内容由 SuggestionEngine 派生；横向可滚动，避免长书名溢出 -->
+        <HorizontalScrollView
+            android:id="@+id/sv_tool_actions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/ll_tool_actions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
     </LinearLayout>
 </LinearLayout>
