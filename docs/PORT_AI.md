@@ -15,7 +15,7 @@
 
 ## 验证证据（GitHub Actions）
 - 工作流：`.github/workflows/ai-port.yml`（push master/port-master 触发；matrix `[ai, app]`）。
-- 最新绿：commit `f08c1c0da` → `testAiDebugUnitTest` + `assembleAiDebug` + `assembleAppDebug` 全部 SUCCESS；产物 `ai-debug-apk`（≈30MB）。
+- 最新绿：commit `1a91244ede` → run [34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
 - 单测：`ai/model/AgentErrorTest`、`ai/runtime/OpenAIClientTest`、`ai/runtime/ApprovalBusTest`、`ai/tool/TextToolCallParserTest`、`ai/tool/SuggestionEngineTest`。
 
 ## 分支
@@ -58,3 +58,4 @@
 - 修复断链：`DefaultBookFetcher.search` 结果补全 `bookUrl/origin/originName/tocUrl/coverUrl/intro/kind/type`（此前只有 name/author/from，`add_book_to_shelf` 拿不到 bookUrl 必然失败）；`search_books` 工具描述同步说明字段用途。
 - UI：工具卡片下方新增横向可滚动的建议按钮条（复用 `ai_bg_chip`），运行中/待确认/已拒绝/失败态不显示。
 - 单测：`app/src/test/java/io/legado/app/ai/tool/SuggestionEngineTest.kt`（10 例）。
+- 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。
