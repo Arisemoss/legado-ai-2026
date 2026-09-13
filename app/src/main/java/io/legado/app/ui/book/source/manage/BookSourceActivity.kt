@@ -461,6 +461,9 @@ class BookSourceActivity : VMBaseActivity<ActivityBookSourceBinding, BookSourceV
             R.id.menu_enable_explore -> viewModel.enableSelectExplore(adapter.selection)
             R.id.menu_disable_explore -> viewModel.disableSelectExplore(adapter.selection)
             R.id.menu_check_source -> checkSource()
+            R.id.menu_source_health -> startActivity(
+                android.content.Intent(this, io.legado.app.ai.source.SourceHealthActivity::class.java)
+            )
             R.id.menu_top_sel -> viewModel.topSource(*adapter.selection.toTypedArray())
             R.id.menu_bottom_sel -> viewModel.bottomSource(*adapter.selection.toTypedArray())
             R.id.menu_add_group -> selectionAddToGroups()

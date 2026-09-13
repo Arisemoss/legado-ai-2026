@@ -76,7 +76,7 @@ object ModelManager {
             stream = prefs.prefBooleanSafe(PreferKey.aiStream, true),
             timeoutMillis = prefs.prefStringSafe(PreferKey.aiTimeout)?.toLongOrNull() ?: 120_000L,
             maxRounds = prefs.prefStringSafe(PreferKey.aiMaxRounds)?.toIntOrNull() ?: 5,
-            maxTokens = prefs.prefStringSafe(PreferKey.aiMaxTokens)?.toIntOrNull() ?: 32_000,
+            maxTokens = prefs.prefStringSafe(PreferKey.aiMaxTokens)?.toIntOrNull() ?: 64_000,
             sessionWindow = prefs.prefStringSafe(PreferKey.aiSessionWindow)?.toIntOrNull() ?: 50,
             toolProtocol = prefs.prefStringSafe(PreferKey.aiToolProtocol, AiModelConfig.PROTOCOL_AUTO)
                 ?: AiModelConfig.PROTOCOL_AUTO

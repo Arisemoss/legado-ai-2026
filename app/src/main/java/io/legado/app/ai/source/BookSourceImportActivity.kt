@@ -57,9 +57,6 @@ class BookSourceImportActivity : BaseActivity<ActivitySourceImportBinding>() {
         binding.btnSelectNew.setOnClickListener { setSelection { it.st == St.NEW } }
         binding.btnSelectUpdate.setOnClickListener { setSelection { it.st == St.UPDATE } }
         binding.btnImport.setOnClickListener { startImport() }
-        binding.btnHealth.setOnClickListener {
-            startActivity(android.content.Intent(this, SourceHealthActivity::class.java))
-        }
         load()
     }
 

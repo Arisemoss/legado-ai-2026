@@ -1,7 +1,10 @@
 package io.legado.app.ai.source
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
@@ -10,6 +13,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
+import io.legado.app.ai.log.AiLog
+import io.legado.app.ai.ui.AiLogActivity
 import io.legado.app.base.BaseActivity
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
@@ -64,6 +69,20 @@ class SourceHealthActivity : BaseActivity<ActivitySourceHealthBinding>() {
         super.onDestroy()
     }
 
+    /** 右上角菜单：运行日志（检测异常/失效原因都在这里，便于排障与反馈） */
+    override fun onCompatCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.source_health, menu)
+        return super.onCompatCreateOptionsMenu(menu)
+    }
+
+    override fun onCompatOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.menu_ai_logs) {
+            startActivity(Intent(this, AiLogActivity::class.java))
+            return true
+        }
+        return super.onCompatOptionsItemSelected(item)
+    }
+
     private fun load() {
         lifecycleScope.launch {
             val list = withContext(Dispatchers.IO) { SourceHealth.allSources() }
@@ -71,8 +90,9 @@ class SourceHealthActivity : BaseActivity<ActivitySourceHealthBinding>() {
             rows.addAll(list.map { Row(it) })
             adapter.notifyDataSetChanged()
             binding.tvIntro.text =
-                "共 ${rows.size} 个启用书源。「开始检测」会分批检测全部（并发 4、单源 12s），" +
-                    "失败项自动重试一次；检测中可点「停止检测」。\n会发起真实网络请求，源较多时需要几分钟。"
+                "共 ${rows.size} 个启用书源。「开始检测」分批检测全部（并发 ${SourceHealth.DEFAULT_CONCURRENCY}、" +
+                    "单源 10s），结果实时回填，失败项自动重试一次；检测中可点「停止检测」。\n" +
+                    "检测在后台线程执行，界面可正常滚动/停止；右上角可查看运行日志。"
             updateSummary()
         }
     }
@@ -85,7 +105,13 @@ class SourceHealthActivity : BaseActivity<ActivitySourceHealthBinding>() {
         if (job?.isActive == true) {
             job?.cancel()
             binding.btnTest.text = "开始检测"
-            binding.tvProgress.text = "已停止（可再次点「开始检测」继续全量检测）"
+            // 把还停在「检测中」的行复位，避免看起来像卡死
+            rows.filter { it.st == St.TESTING }.forEach { it.st = St.IDLE; it.note = "已取消" }
+            adapter.notifyDataSetChanged()
+            updateSummary()
+            val done = rows.count { it.st == St.OK || it.st == St.BAD }
+            binding.tvProgress.text = "已停止：已检测 $done / ${rows.size}（可再次点「开始检测」继续）"
+            AiLog.w("SourceHealth", "用户停止检测：已检测 $done/${rows.size}")
             return
         }
         job = lifecycleScope.launch {
@@ -97,25 +123,36 @@ class SourceHealthActivity : BaseActivity<ActivitySourceHealthBinding>() {
             adapter.notifyDataSetChanged()
             updateSummary()
 
-            // 第一遍：全部
+            AiLog.i("SourceHealth", "开始检测 ${rows.size} 个书源（并发 ${SourceHealth.DEFAULT_CONCURRENCY}）")
+
+            // 第一遍：全部（结果逐条实时回填，不再等全部跑完）
             val targets = rows.map { it.source }
-            val pass1 = SourceHealth.testAll(targets) { done, total ->
-                binding.progress.progress = done
-                binding.tvProgress.text = "检测中 $done / $total"
-            }
-            applyResults(rows, pass1)
+            SourceHealth.testAll(
+                sources = targets,
+                concurrency = SourceHealth.DEFAULT_CONCURRENCY,
+                onProgress = { done, total ->
+                    binding.progress.progress = done
+                    binding.tvProgress.text = "检测中 $done / $total · ${liveStat()}"
+                },
+                onResult = { index, r -> bindResult(rows, index, r) }
+            )
 
             // 第二遍：失败项自动重试一次（网络抖动导致的失败很常见）
             val failed = rows.filter { it.st == St.BAD }
             if (failed.isNotEmpty() && isActive) {
+                AiLog.i("SourceHealth", "失败项重试 ${failed.size} 个")
                 failed.forEach { it.st = St.TESTING }
                 adapter.notifyDataSetChanged()
                 binding.progress.progress = 0
-                val pass2 = SourceHealth.testAll(failed.map { it.source }) { done, total ->
-                    binding.progress.progress = done
-                    binding.tvProgress.text = "重试失败项 $done / $total"
-                }
-                applyResults(failed, pass2)
+                SourceHealth.testAll(
+                    sources = failed.map { it.source },
+                    concurrency = SourceHealth.DEFAULT_CONCURRENCY,
+                    onProgress = { done, total ->
+                        binding.progress.progress = done
+                        binding.tvProgress.text = "重试失败项 $done / $total"
+                    },
+                    onResult = { index, r -> bindResult(failed, index, r) }
+                )
             }
 
             adapter.notifyDataSetChanged()
@@ -124,19 +161,27 @@ class SourceHealthActivity : BaseActivity<ActivitySourceHealthBinding>() {
             val bad = rows.count { it.st == St.BAD }
             binding.tvProgress.text = "检测完成：可用 $ok · 失效 $bad（共 ${rows.size}）"
             updateSummary()
+            AiLog.i("SourceHealth", "检测完成：可用 $ok · 失效 $bad（共 ${rows.size}）")
         }
     }
 
-    /** 把一批检测结果回填到对应行（索引对齐） */
-    private fun applyResults(targets: List<Row>, results: List<SourceHealth.Result>) {
-        results.forEachIndexed { i, r ->
-            targets.getOrNull(i)?.let { row ->
-                row.st = if (r.ok) St.OK else St.BAD
-                row.note = if (r.ok) "${r.latencyMs}ms" else r.reason
-            }
+    /** 单条结果实时回填（索引对齐）；失败原因写日志便于排障 */
+    private fun bindResult(targets: List<Row>, index: Int, r: SourceHealth.Result) {
+        val row = targets.getOrNull(index) ?: return
+        row.st = if (r.ok) St.OK else St.BAD
+        row.note = if (r.ok) "${r.latencyMs}ms" else r.reason
+        if (!r.ok) {
+            AiLog.w("SourceHealth", "失效《${row.source.bookSourceName}》: ${r.reason.orEmpty().take(120)}")
         }
-        adapter.notifyDataSetChanged()
+        adapter.notifyItemChanged(index)
         updateSummary()
+    }
+
+    /** 进度行里的实时统计 */
+    private fun liveStat(): String {
+        val ok = rows.count { it.st == St.OK }
+        val bad = rows.count { it.st == St.BAD }
+        return "可用 $ok · 失效 $bad"
     }
 
     private fun exportBackup(targets: List<Row>) {

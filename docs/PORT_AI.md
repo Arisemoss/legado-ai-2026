@@ -135,5 +135,13 @@
 6. **删除/清空运行中的会话产生孤儿消息（P3）**：deleteSession / clearCurrentMessages 未先停任务，回答会写回已删除的会话。补 ensureIdle()。
 7. **跨线程可见性（P3）**：AiPlatform.runtime / bridge / registry 由 UI 线程重建、IO 线程读取，补 @Volatile。
 8. **书源 URL 字段可写入危险 scheme（P2 安全）**：白名单原本只校验 key 不校验 value，searchUrl / exploreUrl / loginUrl 可被写入 javascript: / file: / content: / data:。已拒绝并记日志。
+
+## 第十一批功能（真机反馈：上限 / 入口 / 检测性能与卡死，2026-09）
+1. **下载上限提高**：`BookSourceHub` 单文件上限 2MB → 16MB（真机多个书源集合被判「内容超过上限」）；替换规则导入 2MB → 8MB。仍为流式限长读取，防 OOM。
+2. **单轮 token 预算默认 32k → 64k**（设置项 `ai_max_tokens` 可继续调大）。
+3. **检测入口迁移**：「书源可用性检测」从「一键获取书源」页的按钮移到 **书源管理右上角菜单**（`menu_source_health`），导入页不再保留该按钮。
+4. **检测卡死/疑似崩溃修复（根因）**：书源检测会走规则解析（含 Rhino JS），原先只在调用方协程（**主线程**）里跑 —— 295 个源时主线程被占满：界面无响应、点「停止检测」也卡住。现在 `SourceHealth.test()` 整体 `withContext(Dispatchers.IO)`，`testAll()` 分块（32/块）+ 并发 + 每源前 `ensureActive()`。
+5. **检测提速与体验**：并发 4 → 8、单源超时 12s → 10s；结果**逐条实时回填**（不再等全部跑完），进度行显示「检测中 x/y · 可用 a · 失效 b」；停止后把仍处「检测中」的行复位为「已取消」并显示已检测进度。
+6. **可用性页加运行日志**：右上角「运行日志」入口（`res/menu/source_health.xml` → `AiLogActivity`）；检测开始 / 单个失效原因 / 停止 / 汇总全部写入 AI 日志，便于真机排障与反馈。
 - 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。

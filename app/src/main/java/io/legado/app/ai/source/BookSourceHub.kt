@@ -120,10 +120,12 @@ object BookSourceHub {
 
     /**
      * 阻塞式下载：调用方必须已处于 IO 线程。
-     * 审计 A-6 同伴加固：仅 http/https + 2MB 流式上限（书源 JSON 通常远小于此）。
+     * 审计 A-6 同伴加固：仅 http/https + 大小上限（流式读取，防 OOM）。
+     * 上限 2026-09 由 2MB 提到 16MB：真机反馈聚合站多个书源集合超过 2MB 被误判失败；
+     * 再大则 JSON 解析的内存峰值风险偏高（真机 heap 约 256MB）。
      */
     private fun downloadTextBlocking(src: String): String {
-        val maxBytes = 2L * 1024 * 1024
+        val maxBytes = 16L * 1024 * 1024
         val scheme = runCatching { java.net.URI(src).scheme?.lowercase() }.getOrNull()
         require(scheme == "http" || scheme == "https") { "仅支持 http/https 地址" }
         val req = Request.Builder().url(src).get().build()

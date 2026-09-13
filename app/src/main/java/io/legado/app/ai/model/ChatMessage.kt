@@ -86,8 +86,8 @@ data class AiModelConfig(
     val apiKey: String = "",
     val temperature: Double = 0.7,
     /** Agent 单轮任务累计 token 预算（跨工具轮累加，超过即截断；审计 B-1）
-     *  32 个工具的 schema + 协议说明约占 5k tokens/轮，默认给 32k 约够 5 轮 */
-    val maxTokens: Int = 32_000,
+     *  32 个工具的 schema + 协议说明约占 5k tokens/轮，默认 64k 约够 10+ 轮 */
+    val maxTokens: Int = 64_000,
     val stream: Boolean = false,
     val timeoutMillis: Long = 120_000L,
     val maxRounds: Int = 5,

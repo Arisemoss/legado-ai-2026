@@ -133,6 +133,11 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/menu_source_health"
+        android:title="书源可用性检测"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menu_group_sources_by_domain"
         android:checkable="true"
         android:title="@string/group_sources_by_domain"

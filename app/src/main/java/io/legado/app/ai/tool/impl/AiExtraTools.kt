@@ -85,7 +85,7 @@ class TestSourcesBatchTool : ToolDefinition {
     override suspend fun execute(ctx: ToolContext, args: Map<String, Any?>): ToolResult {
         val sources = SourceHealth.allSources().take(20)
         if (sources.isEmpty()) return ToolResult(text = Gson().toJson(mapOf("total" to 0)))
-        val results = SourceHealth.testAll(sources) { _, _ -> }
+        val results = SourceHealth.testAll(sources, onProgress = { _, _ -> })
         val ok = results.count { it.ok }
         val bad = results.size - ok
         val details = results.map {

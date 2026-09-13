@@ -400,7 +400,8 @@ class DefaultAppController : AppController {
      * ③ 先看 Content-Length，再流式限长读取，上限 2MB，避免 OOM。
      */
     private fun downloadText(url: String): String {
-        val maxBytes = 2L * 1024 * 1024
+        // 2026-09：上限由 2MB 提到 8MB（替换规则集合也可能较大）
+        val maxBytes = 8L * 1024 * 1024
         val scheme = runCatching { java.net.URI(url).scheme?.lowercase() }.getOrNull()
         require(scheme == "http" || scheme == "https") { "仅支持 http/https 地址" }
         val client = okHttpClient.newBuilder()
