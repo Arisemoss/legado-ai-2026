@@ -30,31 +30,43 @@
         android:paddingHorizontal="8dp"
         android:paddingVertical="4dp">
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_select_all"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
+            android:minWidth="0dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             android:layout_height="wrap_content"
             android:text="全选" />
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_select_new"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
+            android:minWidth="0dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             android:layout_height="wrap_content"
             android:text="仅新书源" />
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_select_update"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
+            android:minWidth="0dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             android:layout_height="wrap_content"
             android:text="仅可更新" />
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_clear"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
+            android:minWidth="0dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             android:layout_height="wrap_content"
             android:text="清空" />
     </LinearLayout>
@@ -101,14 +113,17 @@
             android:textSize="13sp"
             android:text="等待扫描…" />
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_health"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
+            android:minWidth="0dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             android:layout_height="wrap_content"
             android:text="检测可用性" />
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_import"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

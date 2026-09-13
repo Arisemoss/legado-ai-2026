@@ -67,5 +67,8 @@
 - 悬浮球：新增 `PreferKey.aiFloatBallScope`（both/reader/main）+ 设置项 + arrays；`refreshEnabled()` 按宿主页面过滤；宿主为 Activity 时不再加 `FLAG_ACTIVITY_NEW_TASK`。
 - 我的页入口图标改为 `ic_ai_assistant`（星芒）；空态快捷 chip 修复右缘裁切（`clipToPadding=false`）；建议按钮统一走 `@style/AiSuggestionChip`。
 - `MainActivity.handleRequestTab` 改为 `viewPagerMain.post {}` 后切页（修启动/返回瞬间 ViewPager 两页叠影）。
+- **崩溃修复（重要）**：AI 层 4 个布局（Hub / 向导 / 书源检测 / 书源导入）里的 15 个 `com.google.android.material.button.MaterialButton` 全部替换为 `androidx.appcompat.widget.AppCompatButton`——本应用主题是 `Theme.AppCompat.DayNight.NoActionBar`（基座 0 处 MaterialButton），MaterialButton 在 inflate 时抛 `IllegalArgumentException: The style on this component requires your app theme to be Theme.MaterialComponents`，表现为「Unable to start activity」直接闪退。**这正是此前「新手引导不能正常显示」的真正原因**（向导一直崩，不是没弹）。`Widget.MaterialComponents.Button.TextButton` → `?android:attr/borderlessButtonStyle`，并补 `minWidth=0` 防止一行多按钮溢出。
+- **主题色修复**：新增 `ai/ui/AiTheme.kt`，统一从 `ThemeStore`（用户自定义主题色）取色生成 drawable：发送按钮、悬浮球、用户气泡、AI 头像、chip、确认卡按钮全部运行时着色（此前用 `?attr/colorPrimary` 只能拿到静态默认色 `@color/primary`=md_light_blue_600，真机表现为「顶栏棕、悬浮球浅蓝」）。
+- `ai_item_confirm.xml` 标题去掉 🔐 emoji。
 - 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。

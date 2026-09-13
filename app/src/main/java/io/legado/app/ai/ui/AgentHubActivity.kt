@@ -188,8 +188,14 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
         binding.btnEmptySetup.setOnClickListener {
             startActivity(Intent(this, AiSetupWizardActivity::class.java))
         }
-        // 发送按钮/悬浮球同为圆圈主色底，箭头取主色对比色
-        binding.ivSendIcon.setColorFilter(binding.topBar.onPrimaryColor)
+        // 主题色跟随（ThemeStore 才是用户自定义色；?attr/colorPrimary 只是静态默认色）
+        binding.btnSend.background = AiTheme.circle(this)
+        binding.ivSendIcon.setColorFilter(AiTheme.onPrimary(this))
+        binding.ivEmptyIcon.setColorFilter(AiTheme.primary(this))
+        listOf(
+            binding.chipSummarize, binding.chipFindBook, binding.chipCharacters,
+            binding.chipSource, binding.chipShelf
+        ).forEach { it.background = AiTheme.chip(this) }
 
         binding.chipSummarize.setOnClickListener { fillInput("帮我总结当前正在读的这一章") }
         binding.chipFindBook.setOnClickListener { fillInput("帮我在书源里找《诡秘之主》，并加入书架") }
@@ -524,15 +530,17 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
                     val b = vh.binding as AiItemMsgUserBinding
                     val msg = item as ChatRow.Msg
                     b.tvUserText.text = msg.content
-                    // 气泡底色 = 主题主色，文字取对比色（亮主色→黑，暗主色→白）
-                    b.tvUserText.setTextColor(binding.topBar.onPrimaryColor)
+                    // 气泡底色 = 用户主题色，文字取对比色（亮主色→黑，暗主色→白）
+                    b.tvUserText.background = AiTheme.userBubble(this@AgentHubActivity)
+                    b.tvUserText.setTextColor(AiTheme.onPrimary(this@AgentHubActivity))
                     b.tvUserTime.text = timeFmt.format(Date(msg.time))
                 }
                 VT_AI -> {
                     val b = vh.binding as AiItemMsgAiBinding
                     val msg = item as ChatRow.Msg
                     b.tvAiText.text = msg.content
-                    b.tvAiAvatar.setTextColor(binding.topBar.onPrimaryColor)
+                    b.tvAiAvatar.background = AiTheme.circle(this@AgentHubActivity)
+                    b.tvAiAvatar.setTextColor(AiTheme.onPrimary(this@AgentHubActivity))
                     b.tvAiTime.text = timeFmt.format(Date(msg.time))
                 }
                 VT_TOOL -> bindTool(vh.binding as AiItemToolBinding, item as ChatRow.ToolCard)
@@ -543,6 +551,7 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
                 VT_PROCESS -> {
                     val b = vh.binding as AiItemProcessBinding
                     val p = item as ChatRow.Process
+                    b.tvProcLabel.background = AiTheme.chip(this@AgentHubActivity)
                     b.tvProcLabel.text = (if (p.expanded) "▾" else "▸") + " 工作过程 · ${p.steps} 步"
                     b.tvProcLabel.setOnClickListener {
                         val row = list.getOrNull(position)
@@ -610,6 +619,7 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
                 // 统一走 @style/AiSuggestionChip（与空态快捷指令同款），不再手搓样式
                 val chip = TextView(this@AgentHubActivity, null, 0, R.style.AiSuggestionChip)
                 chip.text = action.label
+                chip.background = AiTheme.chip(this@AgentHubActivity)
                 chip.setOnClickListener { onSuggestedAction(action) }
                 val lp = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -623,6 +633,10 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
 
         private fun bindConfirm(b: AiItemConfirmBinding, c: ChatRow.Confirm, position: Int) {
             b.tvProposal.text = c.proposalText
+            // 确认卡按钮同样跟随用户主题色
+            b.btnApprove.background = AiTheme.roundedPrimary(this@AgentHubActivity)
+            b.btnApprove.setTextColor(AiTheme.onPrimary(this@AgentHubActivity))
+            b.btnDeny.background = AiTheme.chip(this@AgentHubActivity)
             if (c.decided == null) {
                 b.confirmActions.visibility = View.VISIBLE
                 b.tvDecided.visibility = View.GONE

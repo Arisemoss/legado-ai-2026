@@ -22,7 +22,7 @@
             android:id="@+id/tv_confirm_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔐 写操作待确认"
+            android:text="写操作待确认"
             android:textColor="#8A6D1A"
             android:textSize="13sp"
             android:textStyle="bold" />

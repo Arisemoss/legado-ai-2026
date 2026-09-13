@@ -140,7 +140,7 @@
                     android:textColor="@color/ai_text_main"
                     android:textSize="12sp" />
 
-                <com.google.android.material.button.MaterialButton
+                <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btn_fetch_models"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -202,21 +202,21 @@
         android:paddingEnd="12dp"
         android:paddingBottom="10dp">
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_skip"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="跳过" />
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_prev"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="上一步" />
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_next"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

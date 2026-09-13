@@ -63,7 +63,7 @@ class AIFloatBallView @JvmOverloads constructor(
         val pad = (10 * resources.displayMetrics.density).toInt()
         ball.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         ball.setPadding(pad, pad, pad, pad)
-        ball.setBackgroundResource(R.drawable.ai_bg_send_circle)
+        ball.background = AiTheme.circle(context)
         ball.setImageResource(R.drawable.ic_ai_float)
         ball.setColorFilter(onPrimary)
         addView(ball)

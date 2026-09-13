@@ -30,23 +30,29 @@
         android:orientation="horizontal"
         android:paddingHorizontal="8dp">
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_test"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="开始检测" />
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_select_bad"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
+            android:minWidth="0dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             android:layout_height="wrap_content"
             android:text="选中失效项" />
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_backup"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
+            android:minWidth="0dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             android:layout_height="wrap_content"
             android:enabled="false"
             android:text="导出备份" />
@@ -94,7 +100,7 @@
             android:textSize="13sp"
             android:text="等待检测…" />
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_delete"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
