@@ -47,3 +47,6 @@
 - `pref_config_ai.xml` 重写为 5 组；`AiConfigFragment` 改为复用 XML 声明键（测试连接/刷新模型/工具说明/日志入口）。
 - `SourceHealth` + `SourceHealthActivity`：批量检测（并发 4 / 12s / 上限 50）、选中失效、导出备份、确认删除。
 - 工具：新增 `add_book_to_shelf`（写确认）→ 总计 28；`search_books` 描述引导「先询问再加入书架」。
+## 第四批功能（P1 工具，2026-09）
+- 桥层：`addToShelfBatch`、`importReplaceRules`（URL/JSON）、`resetSetting`（白名单默认值）。
+- 工具：`batch_add_to_shelf`、`test_sources_batch`、`import_replace_rules`、`reset_setting`（工具总数 32）。
