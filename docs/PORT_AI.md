@@ -15,7 +15,7 @@
 
 ## 验证证据（GitHub Actions）
 - 工作流：`.github/workflows/ai-port.yml`（push master/port-master 触发；matrix `[ai, app]`）。
-- 最新绿：commit `7670bd9192` → run [34748005987](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34748005987)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
+- 最新绿：commit `eca3d3f87c` → run [34749930682](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34749930682)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
 - 单测：`ai/model/AgentErrorTest`、`ai/runtime/OpenAIClientTest`、`ai/runtime/ApprovalBusTest`、`ai/tool/TextToolCallParserTest`、`ai/tool/SuggestionEngineTest`。
 
 ## 分支
@@ -143,5 +143,6 @@
 4. **检测卡死/疑似崩溃修复（根因）**：书源检测会走规则解析（含 Rhino JS），原先只在调用方协程（**主线程**）里跑 —— 295 个源时主线程被占满：界面无响应、点「停止检测」也卡住。现在 `SourceHealth.test()` 整体 `withContext(Dispatchers.IO)`，`testAll()` 分块（32/块）+ 并发 + 每源前 `ensureActive()`。
 5. **检测提速与体验**：并发 4 → 8、单源超时 12s → 10s；结果**逐条实时回填**（不再等全部跑完），进度行显示「检测中 x/y · 可用 a · 失效 b」；停止后把仍处「检测中」的行复位为「已取消」并显示已检测进度。
 6. **可用性页加运行日志**：右上角「运行日志」入口（`res/menu/source_health.xml` → `AiLogActivity`）；检测开始 / 单个失效原因 / 停止 / 汇总全部写入 AI 日志，便于真机排障与反馈。
+- 验收：commit `eca3d3f87c` → AI Port Build [run 34749930682](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34749930682) ai/app 双 job 全绿。
 - 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。
