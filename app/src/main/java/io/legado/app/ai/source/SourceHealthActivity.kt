@@ -19,6 +19,7 @@ import io.legado.app.utils.GSON
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -70,34 +71,72 @@ class SourceHealthActivity : BaseActivity<ActivitySourceHealthBinding>() {
             rows.addAll(list.map { Row(it) })
             adapter.notifyDataSetChanged()
             binding.tvIntro.text =
-                "共 ${rows.size} 个启用书源。点「开始检测」逐个测试（并发 4、单源 12s、最多 50 个）。" +
-                    "\n检测会发起真实网络请求，可能较慢；可随时返回取消。"
+                "共 ${rows.size} 个启用书源。「开始检测」会分批检测全部（并发 4、单源 12s），" +
+                    "失败项自动重试一次；检测中可点「停止检测」。\n会发起真实网络请求，源较多时需要几分钟。"
             updateSummary()
         }
     }
 
+    /**
+     * 检测全部书源（真机反馈：原先固定只测前 50 个）。
+     * 流程：全部检测 → 失败项自动重试一次 → 汇总；运行中按钮变为「停止检测」。
+     */
     private fun startTest() {
-        job?.cancel()
+        if (job?.isActive == true) {
+            job?.cancel()
+            binding.btnTest.text = "开始检测"
+            binding.tvProgress.text = "已停止（可再次点「开始检测」继续全量检测）"
+            return
+        }
         job = lifecycleScope.launch {
-            binding.progress.max = rows.size.coerceAtMost(50)
+            binding.btnTest.text = "停止检测"
+            binding.progress.max = rows.size.coerceAtLeast(1)
             binding.progress.progress = 0
             binding.tvProgress.visibility = View.VISIBLE
-            rows.forEach { it.st = St.TESTING }
+            rows.forEach { it.st = St.TESTING; it.note = null }
             adapter.notifyDataSetChanged()
-            val results = SourceHealth.testAll(rows.map { it.source }) { done, total ->
+            updateSummary()
+
+            // 第一遍：全部
+            val targets = rows.map { it.source }
+            val pass1 = SourceHealth.testAll(targets) { done, total ->
                 binding.progress.progress = done
                 binding.tvProgress.text = "检测中 $done / $total"
             }
-            results.forEachIndexed { i, r ->
-                rows.getOrNull(i)?.let { row ->
-                    row.st = if (r.ok) St.OK else St.BAD
-                    row.note = if (r.ok) "${r.latencyMs}ms" else r.reason
+            applyResults(rows, pass1)
+
+            // 第二遍：失败项自动重试一次（网络抖动导致的失败很常见）
+            val failed = rows.filter { it.st == St.BAD }
+            if (failed.isNotEmpty() && isActive) {
+                failed.forEach { it.st = St.TESTING }
+                adapter.notifyDataSetChanged()
+                binding.progress.progress = 0
+                val pass2 = SourceHealth.testAll(failed.map { it.source }) { done, total ->
+                    binding.progress.progress = done
+                    binding.tvProgress.text = "重试失败项 $done / $total"
                 }
+                applyResults(failed, pass2)
             }
+
             adapter.notifyDataSetChanged()
-            binding.tvProgress.visibility = View.GONE
+            binding.btnTest.text = "开始检测"
+            val ok = rows.count { it.st == St.OK }
+            val bad = rows.count { it.st == St.BAD }
+            binding.tvProgress.text = "检测完成：可用 $ok · 失效 $bad（共 ${rows.size}）"
             updateSummary()
         }
+    }
+
+    /** 把一批检测结果回填到对应行（索引对齐） */
+    private fun applyResults(targets: List<Row>, results: List<SourceHealth.Result>) {
+        results.forEachIndexed { i, r ->
+            targets.getOrNull(i)?.let { row ->
+                row.st = if (r.ok) St.OK else St.BAD
+                row.note = if (r.ok) "${r.latencyMs}ms" else r.reason
+            }
+        }
+        adapter.notifyDataSetChanged()
+        updateSummary()
     }
 
     private fun exportBackup(targets: List<Row>) {

@@ -11,6 +11,9 @@ data class ChatMessage(
     @SerializedName("tool_call_id")
     val toolCallId: String? = null,
     val name: String? = null,
+    /** 思考模式思维链：仅用于「带 tool_calls 的 assistant 消息」回传（见 ChatCompletion.reasoning） */
+    @SerializedName("reasoning_content")
+    val reasoningContent: String? = null,
     /** 本地时间戳（transient 不参与 Gson 序列化），供 UI 气泡时间戳与历史回放 */
     @Transient
     var createdAt: Long = System.currentTimeMillis()
@@ -82,8 +85,9 @@ data class AiModelConfig(
     val baseUrl: String = "https://api.openai.com/v1",
     val apiKey: String = "",
     val temperature: Double = 0.7,
-    /** Agent 单轮任务累计 token 预算（跨工具轮累加，超过即截断；审计 B-1） */
-    val maxTokens: Int = 16_000,
+    /** Agent 单轮任务累计 token 预算（跨工具轮累加，超过即截断；审计 B-1）
+     *  32 个工具的 schema + 协议说明约占 5k tokens/轮，默认给 32k 约够 5 轮 */
+    val maxTokens: Int = 32_000,
     val stream: Boolean = false,
     val timeoutMillis: Long = 120_000L,
     val maxRounds: Int = 5,

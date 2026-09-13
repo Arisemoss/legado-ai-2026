@@ -67,3 +67,8 @@ Legado / 开源阅读
 - 🌐 **网络边界**：AI 服务商域名强制 HTTPS；工具 URL 下载增加 scheme 白名单、超时与 2MB 上限；默认书源聚合页改 HTTPS。
 - 🔑 **仓库安全**：移除仓库内的签名密钥并改用 Secrets（未配置则跳过签名）；`ReaderProvider` 外部访问默认关闭（可在「其他设置」开启）。
 
+### 修复（2026-09 第九批 · 真机反馈）
+- 🩺 **书源检测全量化**：原先只检测前 50 个书源，现改为分批检测全部（进度按总数推进、失败项自动重试一次、支持中途停止）。
+- 🧠 **思考模式模型可用**：修复 deepseek-flash / deepseek-reasoner 等思考模式下第二轮必现的 `HTTP 400 reasoning_content must be passed back`（思维链现已随 tool_calls 一起回传）。
+- 💰 **token 预算默认 32k**（原 16k，实测工具多轮约 5.2k/轮，仍可在设置中调整）。
+

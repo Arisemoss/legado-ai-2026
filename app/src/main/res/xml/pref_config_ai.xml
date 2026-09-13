@@ -90,8 +90,8 @@
         <androidx.preference.EditTextPreference
             android:key="ai_max_tokens"
             android:title="单轮 token 预算"
-            android:summary="累计 token 超过即截断（默认 16000；中文长回答可调高）"
-            android:defaultValue="16000"
+            android:summary="累计 token 超过即截断（默认 32000；工具多轮对话约 5k/轮，可自行调整）"
+            android:defaultValue="32000"
             app:iconSpaceReserved="false" />
 
         <androidx.preference.EditTextPreference

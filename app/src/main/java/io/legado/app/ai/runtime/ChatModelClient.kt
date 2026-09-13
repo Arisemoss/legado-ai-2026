@@ -33,7 +33,13 @@ interface ChatModelClient {
 data class ChatCompletion(
     val content: String?,
     val toolCalls: List<ToolCallData>?,
-    val usage: Usage? = null
+    val usage: Usage? = null,
+    /**
+     * 思考模式模型的思维链（DeepSeek-R1/思考模式返回的 reasoning_content）。
+     * 必须在回传带 tool_calls 的 assistant 消息时一并回传，否则服务端返回
+     * HTTP 400 invalid_request_error（真机 deepseek-flash 已复现）。
+     */
+    val reasoning: String? = null
 )
 
 data class ToolCallData(

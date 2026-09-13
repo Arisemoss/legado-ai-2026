@@ -11,7 +11,6 @@ import io.legado.app.ai.model.Usage
 import io.legado.app.ai.log.AiLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
@@ -90,6 +89,7 @@ class OpenAIClient(
             .build()
 
         val content = StringBuilder()
+        val reasoning = StringBuilder()
         val callIds = HashMap<Int, String>()
         val callNames = HashMap<Int, String>()
         val callArgs = HashMap<Int, StringBuilder>()
@@ -124,7 +124,7 @@ class OpenAIClient(
                     sawSseData = true
                     val deltaCount = chunks
                     consumeChunk(
-                        payload, content, onDelta = { piece ->
+                        payload, content, reasoning, onDelta = { piece ->
                             chunks++
                             if (firstDeltaMs == 0L) {
                                 firstDeltaMs = System.currentTimeMillis() - startMs
@@ -162,12 +162,14 @@ class OpenAIClient(
         AiLog.i(
             "SSE",
             "完成: ${content.length}字/${chunks}块/${System.currentTimeMillis() - startMs}ms" +
-                (if (calls.isNotEmpty()) " toolCalls=${calls.size}" else "")
+                (if (calls.isNotEmpty()) " toolCalls=${calls.size}" else "") +
+                (if (reasoning.isNotEmpty()) " reasoning=${reasoning.length}字" else "")
         )
         ChatCompletion(
             content = content.toString().ifEmpty { null },
             toolCalls = calls.ifEmpty { null },
-            usage = usage
+            usage = usage,
+            reasoning = reasoning.toString().ifEmpty { null }
         )
     }
 
@@ -175,6 +177,7 @@ class OpenAIClient(
     private inline fun consumeChunk(
         payload: String,
         content: StringBuilder,
+        reasoning: StringBuilder,
         onDelta: (String) -> Unit,
         callIds: MutableMap<Int, String>,
         callNames: MutableMap<Int, String>,
@@ -191,6 +194,10 @@ class OpenAIClient(
         }
         (root.getAsJsonArray("choices")?.firstOrNull() as? JsonObject)?.let { choice ->
             val delta = choice.getAsJsonObject("delta") ?: JsonObject()
+            // 思考模式：思维链增量单独累积，不进正文、不回调 UI（只用于下一轮回传）
+            delta.get("reasoning_content")?.takeIf { !it.isJsonNull }?.asString?.let { piece ->
+                if (piece.isNotEmpty()) reasoning.append(piece)
+            }
             delta.get("content")?.takeIf { !it.isJsonNull }?.asString?.let { piece ->
                 if (piece.isNotEmpty()) {
                     content.append(piece)
@@ -219,7 +226,7 @@ class OpenAIClient(
         }
     }
 
-    private fun buildBody(messages: List<ChatMessage>, tools: List<Map<String, Any>>?, stream: Boolean): String {
+    internal fun buildBody(messages: List<ChatMessage>, tools: List<Map<String, Any>>?, stream: Boolean): String {
         val root = JsonObject()
         root.addProperty("model", model)
         root.addProperty("stream", stream)
@@ -252,6 +259,10 @@ class OpenAIClient(
                     tc.add(call)
                 }
                 o.add("tool_calls", tc)
+                // 思考模式要求：带 tool_calls 的 assistant 消息必须把 reasoning_content 一起带回，
+                // 否则下一轮 400 invalid_request_error（真机 deepseek-flash 复现）
+                m.reasoningContent?.takeIf { it.isNotBlank() }
+                    ?.let { o.addProperty("reasoning_content", it) }
             }
             if (content != null) o.addProperty("content", content)
             if (!textToolMode && !m.toolCallId.isNullOrEmpty()) o.addProperty("tool_call_id", m.toolCallId)
@@ -298,6 +309,8 @@ class OpenAIClient(
         val msg = choice.getAsJsonObject("message") ?: JsonObject()
         val content = if (msg.has("content") && !msg.get("content").isJsonNull)
             msg["content"].asString else null
+        val reasoning = if (msg.has("reasoning_content") && !msg.get("reasoning_content").isJsonNull)
+            msg["reasoning_content"].asString else null
         val calls = if (msg.has("tool_calls")) {
             msg.getAsJsonArray("tool_calls").map { c ->
                 val f = c.asJsonObject.getAsJsonObject("function")
@@ -315,7 +328,7 @@ class OpenAIClient(
                 totalTokens = u.get("total_tokens")?.asInt
             )
         }
-        return ChatCompletion(content, calls, usage)
+        return ChatCompletion(content, calls, usage, reasoning)
     }
 
     private companion object {

@@ -41,14 +41,17 @@ object SourceHealth {
         }
     }
 
-    /** 并发批量检测（默认并发 4、最多 50 个），带进度回调 */
+    /**
+     * 并发批量检测（默认并发 4），带进度回调。
+     * [limit] <= 0 表示检测全部（真机反馈：原先固定 50 个，295 个书源永远只测前 50）。
+     */
     suspend fun testAll(
         sources: List<BookSource>,
         concurrency: Int = 4,
-        limit: Int = 50,
+        limit: Int = 0,
         onProgress: (done: Int, total: Int) -> Unit = { _, _ -> }
     ): List<Result> = coroutineScope {
-        val targets = sources.take(limit)
+        val targets = if (limit <= 0) sources else sources.take(limit)
         val sem = Semaphore(concurrency)
         var done = 0
         targets.map { src ->

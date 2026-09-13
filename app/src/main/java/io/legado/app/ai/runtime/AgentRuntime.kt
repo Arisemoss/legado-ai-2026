@@ -141,7 +141,7 @@ class AgentRuntime(
                 }
             }
 
-            appendAssistant(messages, answerContent, calls)
+            appendAssistant(messages, answerContent, calls, completion.reasoning)
             val increment = completion.usage?.totalTokens?.toLong()
                 ?: estimateTokens(completion.content)
             billed += increment
@@ -312,12 +312,16 @@ class AgentRuntime(
     private fun appendAssistant(
         messages: MutableList<ChatMessage>,
         content: String?,
-        calls: List<ToolCallData>?
+        calls: List<ToolCallData>?,
+        reasoning: String? = null
     ) {
         messages += ChatMessage(
             role = "assistant",
             content = content,
-            toolCalls = calls?.map { ToolCall(it.id, "function", FunctionCall(it.name, it.arguments)) }
+            toolCalls = calls?.map { ToolCall(it.id, "function", FunctionCall(it.name, it.arguments)) },
+            // 思考模式（DeepSeek-R1 / deepseek-flash 等）：带 tool_calls 回传时
+            // 必须一并回传思维链，否则服务端 400（真机日志已确认）
+            reasoningContent = reasoning?.takeIf { !calls.isNullOrEmpty() && it.isNotBlank() }
         )
     }
 

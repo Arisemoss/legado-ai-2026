@@ -111,5 +111,16 @@
 - `TextToolCallParserTest` 增补 `&lt;`/`&gt;` 实体解码回归
 - `ApprovalBusTest` 增补「多 token 互不覆盖」并发用例
 - 验收：commit `2bb1ea19d2` → AI Port Build [run 34745170182](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34745170182) ai/app 双 job 全绿
+
+## 第九批功能（真机两项问题，2026-09）
+### 1. 书源可用性检测：全量分批自动推进
+- 真机反馈：295 个书源只检测前 50 个（`SourceHealth.testAll(limit = 50)` 写死），且不会自动继续。
+- `testAll(limit) 默认 0 = 全部`；`SourceHealthActivity` 改为「全量检测 → 失败项自动重试一次 → 汇总」，进度条按总数推进，运行中按钮变为「停止检测」，文案与统计同步更新。
+### 2. 思考模式模型 HTTP 400（deepseek-flash 实机复现）
+- 现象：第 2 轮必失败 `HTTP 400 invalid_request_error: The reasoning_content in the thinking mode must be passed back to the API`。
+- 根因：思考模式的思维链（`reasoning_content`）在 SSE/非流式解析时被整体丢弃；下一轮把 assistant 的 `tool_calls` 回传时缺了它，服务端直接拒绝。
+- 修复：`ChatCompletion`/`ChatMessage` 增加 `reasoning`/`reasoning_content`；流式 `consumeChunk` 单独累积思维链（不进正文、不进打字机）；`buildBody` 在回传带 `tool_calls` 的 assistant 消息时一并回传 `reasoning_content`；无 tool_calls 的普通消息依旧不带。
+- 回归测试：`OpenAIClientTest` 新增 3 例（解析 reasoning、回传 reasoning、普通消息不带 reasoning）。
+- 附带：单轮 token 预算默认由 16000 提到 32000（真机日志实测每轮约 5.2k tokens，16k 仅够 3 轮）。
 - 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。
