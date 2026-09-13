@@ -15,7 +15,7 @@
 
 ## 验证证据（GitHub Actions）
 - 工作流：`.github/workflows/ai-port.yml`（push master/port-master 触发；matrix `[ai, app]`）。
-- 最新绿：commit `d3d672aaa0` → run [34734131100](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34734131100)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
+- 最新绿：commit `3e7fb508c6` → run [34735570518](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34735570518)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
 - 单测：`ai/model/AgentErrorTest`、`ai/runtime/OpenAIClientTest`、`ai/runtime/ApprovalBusTest`、`ai/tool/TextToolCallParserTest`、`ai/tool/SuggestionEngineTest`。
 
 ## 分支
@@ -80,5 +80,6 @@
 - **首次对话必然崩溃（隐患）**：`AgentTaskCenter` 作用域是 `Dispatchers.Main.immediate`，而 `AgentRuntime` 内部是阻塞式 HTTP（`OpenAIClient.execute()`），第一条消息就会 `NetworkOnMainThreadException`。现在 `runtime.execute` 整体包在 `withContext(Dispatchers.IO)` 中；事件回流走 StateFlow、`ApprovalBus` 本身线程安全，不受影响。
 - **设置页「测试连接」同问题**：`OpenAIClient.complete` 在 `viewLifecycleOwner.lifecycleScope`（主线程）执行，异常被 `runCatching` 吞成「连接失败」。改 `withContext(Dispatchers.IO)`。
 - **向导体验**：选择服务商后自动进入下一步；获取模型失败时回退到预设模型并放行到选模型步；完成时若模型名为空兜底写入服务商首个预设模型。
+- 验收：commit `3e7fb508c6` → AI Port Build [run 34735570518](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34735570518) ai/app 双 job 全绿。
 - 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。
