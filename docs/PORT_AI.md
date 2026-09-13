@@ -15,7 +15,7 @@
 
 ## 验证证据（GitHub Actions）
 - 工作流：`.github/workflows/ai-port.yml`（push master/port-master 触发；matrix `[ai, app]`）。
-- 最新绿：commit `3e7fb508c6` → run [34735570518](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34735570518)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
+- 最新绿：commit `2bb1ea19d2` → run [34745170182](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34745170182)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
 - 单测：`ai/model/AgentErrorTest`、`ai/runtime/OpenAIClientTest`、`ai/runtime/ApprovalBusTest`、`ai/tool/TextToolCallParserTest`、`ai/tool/SuggestionEngineTest`。
 
 ## 分支
@@ -110,5 +110,6 @@
 - `ai/log/AiLogScrubTest`（5 例，脱敏机制）
 - `TextToolCallParserTest` 增补 `&lt;`/`&gt;` 实体解码回归
 - `ApprovalBusTest` 增补「多 token 互不覆盖」并发用例
+- 验收：commit `2bb1ea19d2` → AI Port Build [run 34745170182](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34745170182) ai/app 双 job 全绿
 - 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。
