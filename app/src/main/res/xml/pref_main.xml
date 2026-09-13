@@ -19,7 +19,7 @@
         app:iconSpaceReserved="false" />
 
     <io.legado.app.lib.prefs.Preference
-        android:icon="@drawable/ic_ai_sessions"
+        android:icon="@drawable/ic_ai_assistant"
         android:key="aiAssistant"
         android:summary="AI 对话/工具与模型配置（AI 增强版）"
         android:title="AI 智能助手"

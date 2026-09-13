@@ -533,8 +533,10 @@
         <activity android:name=".ai.source.BookSourceImportActivity" />
         <!-- 书源可用性检测与清理 -->
         <activity android:name=".ai.source.SourceHealthActivity" />
-        <!-- 首次使用的 AI 配置向导 -->
-        <activity android:name=".ai.ui.AiSetupWizardActivity" />
+        <!-- 首次使用的 AI 配置向导（adjustResize：键盘弹出不顶掉「跳过/下一步」） -->
+        <activity
+            android:name=".ai.ui.AiSetupWizardActivity"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
     <queries>

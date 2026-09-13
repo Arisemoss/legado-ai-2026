@@ -168,18 +168,28 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
             vm.send(text)
         }
         binding.btnStop.setOnClickListener { vm.stop() }
-        binding.btnConfig.setOnClickListener {
+        // 统一顶栏（主题主色 + 状态栏 insets + 返回）：会话/新建/日志/设置 统一为图标动作
+        binding.topBar.setTitle("AI 智能助手")
+        binding.topBar.addAction(R.drawable.ic_ai_sessions, "会话记录") { showSessionDialog() }
+        binding.topBar.addAction(R.drawable.ic_ai_new_chat, "新建会话") {
+            uiJobs += lifecycleScope.launch { runCatching { vm.newSession() } }
+            toast("已新建会话")
+        }
+        binding.topBar.addAction(R.drawable.ic_bug_report, "运行日志") {
+            startActivity(Intent(this, AiLogActivity::class.java))
+        }
+        binding.topBar.addAction(R.drawable.ic_settings, "AI 配置") {
             startActivity(
                 Intent(this, ConfigActivity::class.java)
                     .putExtra("configTag", ConfigTag.AI_CONFIG)
             )
         }
-        binding.btnNewSession.setOnClickListener {
-            uiJobs += lifecycleScope.launch { runCatching { vm.newSession() } }
-            toast("已新建会话")
+        // 空态直达配置向导（可重入），不再只能靠设置页
+        binding.btnEmptySetup.setOnClickListener {
+            startActivity(Intent(this, AiSetupWizardActivity::class.java))
         }
-        binding.btnSessions.setOnClickListener { showSessionDialog() }
-        binding.btnLogs.setOnClickListener { startActivity(Intent(this, AiLogActivity::class.java)) }
+        // 发送按钮/悬浮球同为圆圈主色底，箭头取主色对比色
+        binding.ivSendIcon.setColorFilter(binding.topBar.onPrimaryColor)
 
         binding.chipSummarize.setOnClickListener { fillInput("帮我总结当前正在读的这一章") }
         binding.chipFindBook.setOnClickListener { fillInput("帮我在书源里找《诡秘之主》，并加入书架") }
@@ -201,6 +211,8 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
         uiJobs += lifecycleScope.launch {
             var lastRendered: List<ChatRow>? = null
             var lastBusy: Boolean? = null
+            var lastStatus: String? = null
+            var lastConfigured: Boolean? = null
             while (isActive) {
                 val partial = vm.currentPartial()
                 val list = run {
@@ -229,7 +241,16 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
                     binding.btnStop.visibility = if (busyNow) View.VISIBLE else View.GONE
                     lastBusy = busyNow
                 }
-                binding.tvSubtitle.text = vm.statusLine.value
+                val status = vm.statusLine.value
+                if (status != lastStatus) {
+                    lastStatus = status
+                    binding.topBar.setSubtitle(status)
+                }
+                val configured = vm.isConfigured()
+                if (configured != lastConfigured) {
+                    lastConfigured = configured
+                    binding.btnEmptySetup.visibility = if (configured) View.GONE else View.VISIBLE
+                }
                 renderIfChanged(list, lastRendered)
                 lastRendered = list
                 delay(if (partial != null) 90L else 150L)
@@ -503,12 +524,15 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
                     val b = vh.binding as AiItemMsgUserBinding
                     val msg = item as ChatRow.Msg
                     b.tvUserText.text = msg.content
+                    // 气泡底色 = 主题主色，文字取对比色（亮主色→黑，暗主色→白）
+                    b.tvUserText.setTextColor(binding.topBar.onPrimaryColor)
                     b.tvUserTime.text = timeFmt.format(Date(msg.time))
                 }
                 VT_AI -> {
                     val b = vh.binding as AiItemMsgAiBinding
                     val msg = item as ChatRow.Msg
                     b.tvAiText.text = msg.content
+                    b.tvAiAvatar.setTextColor(binding.topBar.onPrimaryColor)
                     b.tvAiTime.text = timeFmt.format(Date(msg.time))
                 }
                 VT_TOOL -> bindTool(vh.binding as AiItemToolBinding, item as ChatRow.ToolCard)
@@ -583,14 +607,9 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
             if (!show) return
             val density = resources.displayMetrics.density
             for (action in card.actions) {
-                val chip = TextView(this@AgentHubActivity)
+                // 统一走 @style/AiSuggestionChip（与空态快捷指令同款），不再手搓样式
+                val chip = TextView(this@AgentHubActivity, null, 0, R.style.AiSuggestionChip)
                 chip.text = action.label
-                chip.textSize = 12f
-                chip.setTextColor(color(R.color.ai_chip_text))
-                chip.setBackgroundResource(R.drawable.ai_bg_chip)
-                val padH = (10 * density).toInt()
-                val padV = (4 * density).toInt()
-                chip.setPadding(padH, padV, padH, padV)
                 chip.setOnClickListener { onSuggestedAction(action) }
                 val lp = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,

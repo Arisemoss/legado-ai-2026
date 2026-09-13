@@ -5,12 +5,15 @@ import android.os.Bundle
 import android.text.InputType
 import android.widget.EditText
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import io.legado.app.R
+import io.legado.app.ai.AiPlatform
 import io.legado.app.ai.ModelManager
 import io.legado.app.ai.ui.AiLogActivity
+import io.legado.app.ai.ui.AiSetupWizardActivity
 import io.legado.app.ai.model.AiModelConfig
 import io.legado.app.ai.model.ChatMessage
 import io.legado.app.ai.runtime.OpenAIClient
@@ -171,12 +174,22 @@ class AiConfigFragment : PreferenceFragment() {
                 true
             }
         }
-        findPreference<Preference>("ai_tools_info")?.setOnPreferenceClickListener {
-            toast("共 28 个工具；写操作（改书源/书架/设置/净化）都必须你点「同意」")
-            true
+        findPreference<Preference>("ai_tools_info")?.let { pref ->
+            // 数量动态取注册表，不再硬编码（曾写死 28，实际 32）
+            val count = runCatching { AiPlatform.registry.definitions().size }.getOrDefault(0)
+            if (count > 0) pref.title = "AI 工具清单（$count 个）"
+            pref.setOnPreferenceClickListener {
+                showToolsDialog()
+                true
+            }
         }
         findPreference<Preference>("ai_logs_entry")?.setOnPreferenceClickListener {
             startActivity(Intent(requireContext(), AiLogActivity::class.java))
+            true
+        }
+        // 向导可重入：装过旧版 / 点过跳过的用户不必清数据也能重新配置
+        findPreference<Preference>("ai_rerun_setup")?.setOnPreferenceClickListener {
+            startActivity(Intent(requireContext(), AiSetupWizardActivity::class.java))
             true
         }
         refreshModels()
@@ -228,6 +241,28 @@ class AiConfigFragment : PreferenceFragment() {
             )
         }
     }
+    /** 工具清单：按分类展开全部工具（id / 说明 / 是否写确认），替代原先只弹一个 Toast */
+    private fun showToolsDialog() {
+        val defs = runCatching { AiPlatform.registry.definitions() }.getOrDefault(emptyList())
+        if (defs.isEmpty()) {
+            toast("工具注册表未就绪，请重启 App 后重试")
+            return
+        }
+        val text = defs.groupBy { it.category }
+            .entries
+            .joinToString("\n\n") { (category, tools) ->
+                "【$category】${tools.size} 个\n" + tools.joinToString("\n") { t ->
+                    "· ${t.id}" + if (t.manualConfirm) "（写操作 · 需确认）" else "" +
+                        "\n    ${t.info.description}"
+                }
+            }
+        AlertDialog.Builder(requireContext())
+            .setTitle("AI 工具清单（${defs.size} 个）")
+            .setMessage(text)
+            .setPositiveButton("知道了", null)
+            .show()
+    }
+
     private fun upAllSummary() {
         val ctx = requireContext()
         val preset = AiProviderPresets.byId(ctx.getPrefString(PreferKey.aiProvider) ?: "")
@@ -240,7 +275,6 @@ class AiConfigFragment : PreferenceFragment() {
         val keyText = AiKeyStore.getApiKey().orEmpty()
         findPreference<Preference>(PreferKey.aiApiKey)?.summary =
             if (keyText.isBlank()) "未设置（必填）" else "已加密保存 (${keyText.take(4)}…${keyText.takeLast(4)})"
-        // 连接测试按钮在后续版本接入
     }
 
     private fun toast(msg: String) {

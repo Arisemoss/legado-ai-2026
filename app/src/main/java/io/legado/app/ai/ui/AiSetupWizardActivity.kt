@@ -1,5 +1,6 @@
 package io.legado.app.ai.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
@@ -22,7 +23,11 @@ import kotlinx.coroutines.withContext
 
 /**
  * 首次使用的 AI 助手配置向导：介绍 → 选服务商 → 填 Key（自动取模型）→ 选模型 → 完成。
- * 可随时跳过；完成状态记录在 PreferKey.aiSetupDone。
+ *
+ * 2026-09 修复：
+ *  - 「跳过」只记 aiSetupShown，不再等同于完成（可在设置页「重新运行配置向导」重来）；
+ *  - 顶栏统一为 [AiTopBar]（状态栏 insets + 返回 = 上一步）；页面可滚动，键盘不再顶掉底部按钮；
+ *  - 完成后直接进入 AI Hub，形成闭环。
  */
 class AiSetupWizardActivity : BaseActivity<ActivityAiSetupBinding>() {
 
@@ -35,9 +40,21 @@ class AiSetupWizardActivity : BaseActivity<ActivityAiSetupBinding>() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         provider = AiProviderPresets.byId(getPrefString(PreferKey.aiProvider))
             ?: AiProviderPresets.default
+
+        binding.topBar.setTitle("AI 助手配置")
+        binding.topBar.setSubtitle(provider?.label)
+        binding.topBar.setOnBackClickListener {
+            if (step > 0) {
+                step--
+                render()
+            } else {
+                finish()
+            }
+        }
+
         binding.lvProvider.adapter = ArrayAdapter(
             this,
-            android.R.layout.simple_list_item_single_choice,
+            R.layout.ai_item_wizard_choice,
             AiProviderPresets.all.map { it.label + if (it.needsKey) "（需 API Key）" else "（本地，无需 Key）" }
         )
         binding.lvProvider.choiceMode = android.widget.ListView.CHOICE_MODE_SINGLE
@@ -50,11 +67,7 @@ class AiSetupWizardActivity : BaseActivity<ActivityAiSetupBinding>() {
             }
             render()
         }
-        binding.lvModel.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_list_item_single_choice,
-            models
-        )
+        binding.lvModel.adapter = ArrayAdapter(this, R.layout.ai_item_wizard_choice, models)
         binding.lvModel.choiceMode = android.widget.ListView.CHOICE_MODE_SINGLE
         binding.lvModel.setOnItemClickListener { _, _, position, _ ->
             models.getOrNull(position)?.let { m ->
@@ -71,6 +84,7 @@ class AiSetupWizardActivity : BaseActivity<ActivityAiSetupBinding>() {
 
     private fun render() {
         binding.tvStep.text = "第 ${step + 1} / 4 步"
+        binding.topBar.setSubtitle(provider?.label ?: "未选择服务商")
         binding.pageIntro.visibility = if (step == 0) View.VISIBLE else View.GONE
         binding.pageProvider.visibility = if (step == 1) View.VISIBLE else View.GONE
         binding.pageKey.visibility = if (step == 2) View.VISIBLE else View.GONE
@@ -89,9 +103,11 @@ class AiSetupWizardActivity : BaseActivity<ActivityAiSetupBinding>() {
         when (step) {
             0, 1 -> {
                 if (step == 1 && provider == null) {
-                    toast("请先选择服务商"); return
+                    toast("请先选择服务商")
+                    return
                 }
-                step++; render()
+                step++
+                render()
             }
             2 -> {
                 val key = binding.etKey.text?.toString()?.trim().orEmpty()
@@ -106,7 +122,7 @@ class AiSetupWizardActivity : BaseActivity<ActivityAiSetupBinding>() {
         val key = binding.etKey.text?.toString()?.trim().orEmpty()
         val baseUrl = getPrefString(PreferKey.aiBaseUrl) ?: provider?.baseUrl.orEmpty()
         if (key.isBlank() && provider?.needsKey != false) {
-            binding.tvFetchStatus.text = "请先填写 API Key"
+            binding.tvFetchStatus.text = "请先填写 API Key；也可以点「跳过」稍后在设置页配置"
             return
         }
         binding.tvFetchStatus.text = "正在获取模型列表…"
@@ -134,11 +150,22 @@ class AiSetupWizardActivity : BaseActivity<ActivityAiSetupBinding>() {
         }
     }
 
+    /**
+     * 结束向导。
+     * skip=true 只是「这次不配了」：仅记 aiSetupShown，保留再次引导与设置页重开的可能；
+     * skip=false 才是真正的完成，并直接进入 AI Hub。
+     */
     private fun finishSetup(skip: Boolean) {
-        val manual = binding.etModelManual.text?.toString()?.trim().orEmpty()
-        if (!skip && manual.isNotBlank()) putPrefString(PreferKey.aiModel, manual)
-        putPrefBoolean(PreferKey.aiSetupDone, true)
-        toast(if (skip) "可稍后在「我的 → AI 智能助手」里配置" else "配置完成，开始使用 AI 助手")
+        if (skip) {
+            putPrefBoolean(PreferKey.aiSetupShown, true)
+            toast("已跳过，可随时在「我的 → AI 智能助手 → 重新运行配置向导」继续")
+        } else {
+            val manual = binding.etModelManual.text?.toString()?.trim().orEmpty()
+            if (manual.isNotBlank()) putPrefString(PreferKey.aiModel, manual)
+            putPrefBoolean(PreferKey.aiSetupDone, true)
+            toast("配置完成，开始使用 AI 助手")
+            startActivity(Intent(this, AgentHubActivity::class.java))
+        }
         finish()
     }
 

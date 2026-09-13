@@ -26,7 +26,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * AI 运行日志页（移植：ViewBinding 改写）
+ * AI 运行日志页（ViewBinding + 统一 AiTopBar）
  * 实时展示当次会话日志（模型请求/流式/工具/错误），支持复制、清空、分享完整日志文件。
  */
 class AiLogActivity : BaseActivity<ActivityAiLogBinding>() {
@@ -42,27 +42,12 @@ class AiLogActivity : BaseActivity<ActivityAiLogBinding>() {
     private var lastText: String? = null
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
-        binding.btnBack.setOnClickListener { finish() }
-        binding.btnClear.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setMessage("清空全部 AI 日志？（内存与文件都会清除）")
-                .setPositiveButton("清空") { _, _ ->
-                    AiLog.clear()
-                    lastText = null
-                    binding.tvLog.text = ""
-                    showToast("已清空")
-                }
-                .setNegativeButton("取消", null)
-                .show()
-        }
-        binding.btnCopy.setOnClickListener {
-            val text = binding.tvLog.text?.toString().orEmpty()
-            if (text.isBlank()) return@setOnClickListener
-            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("ai_log", text))
-            showToast("已复制 ${text.lines().size} 行")
-        }
-        binding.btnShare.setOnClickListener { shareFullFile() }
+        // 统一顶栏：返回箭头由 AiTopBar 提供（默认 finish），右侧动作与 Hub 同款图标按钮
+        binding.topBar.setTitle("运行日志")
+        binding.topBar.setSubtitle("模型请求 / 流式 / 工具 / 错误全链路")
+        binding.topBar.addAction(R.drawable.ic_clear_all, "清空日志") { confirmClear() }
+        binding.topBar.addAction(R.drawable.ic_copy, "复制日志") { copyLog() }
+        binding.topBar.addAction(R.drawable.ic_share, "分享完整日志文件") { shareFullFile() }
 
         // 实时刷新（1s 轮询内存缓冲；内容未变化时不重设文本，保持可选中/滚动位置）
         jobs += lifecycleScope.launch {
@@ -77,6 +62,30 @@ class AiLogActivity : BaseActivity<ActivityAiLogBinding>() {
         jobs.forEach { it.cancel() }
         jobs.clear()
         super.onDestroy()
+    }
+
+    private fun confirmClear() {
+        AlertDialog.Builder(this)
+            .setMessage("清空全部 AI 日志？（内存与文件都会清除）")
+            .setPositiveButton("清空") { _, _ ->
+                AiLog.clear()
+                lastText = null
+                binding.tvLog.text = ""
+                showToast("已清空")
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun copyLog() {
+        val text = binding.tvLog.text?.toString().orEmpty()
+        if (text.isBlank()) {
+            showToast("暂无日志")
+            return
+        }
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cm.setPrimaryClip(ClipData.newPlainText("ai_log", text))
+        showToast("已复制 ${text.lines().size} 行")
     }
 
     private fun render() {

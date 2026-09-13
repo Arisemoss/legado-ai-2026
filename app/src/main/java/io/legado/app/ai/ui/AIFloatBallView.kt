@@ -1,8 +1,10 @@
 package io.legado.app.ai.ui
 
 import android.animation.ValueAnimator
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -12,7 +14,10 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import io.legado.app.R
 import io.legado.app.constant.PreferKey
+import io.legado.app.lib.theme.primaryColor
 import io.legado.app.model.ReadBook
+import io.legado.app.ui.book.read.ReadBookActivity
+import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.getPrefString
 import io.legado.app.utils.putPrefString
@@ -35,6 +40,13 @@ class AIFloatBallView @JvmOverloads constructor(
     }
 
     private val ball = ImageView(context)
+
+    /** 当前宿主页面：main=主界面，reader=阅读页（用于「显示范围」过滤） */
+    private val hostScope: String = if (context is ReadBookActivity) "reader" else "main"
+
+    /** 主色上的对比色：图标用（亮主色→黑，暗主色→白） */
+    private val onPrimary: Int =
+        if (ColorUtils.isColorLight(context.primaryColor)) Color.BLACK else Color.WHITE
     private var downRawX = 0f
     private var downRawY = 0f
     private var lastRawX = 0f
@@ -53,7 +65,7 @@ class AIFloatBallView @JvmOverloads constructor(
         ball.setPadding(pad, pad, pad, pad)
         ball.setBackgroundResource(R.drawable.ai_bg_send_circle)
         ball.setImageResource(R.drawable.ic_ai_float)
-        ball.setColorFilter(androidx.core.content.ContextCompat.getColor(context, R.color.ai_on_accent_container))
+        ball.setColorFilter(onPrimary)
         addView(ball)
 
         contentDescription = "AI 助手"
@@ -62,10 +74,14 @@ class AIFloatBallView @JvmOverloads constructor(
         post { restorePosition() }
     }
 
-    /** 是否显示（设置可关闭；宿主在 onResume 调用即可即时生效） */
+    /**
+     * 是否显示：总开关 × 显示范围（both=主页与阅读页 / reader=仅阅读页 / main=仅主界面）。
+     * 宿主在 onResume 调用即可即时生效。
+     */
     fun refreshEnabled() {
-        visibility =
-            if (context.getPrefBoolean(PreferKey.aiFloatBallEnabled, true)) View.VISIBLE else View.GONE
+        val enabled = context.getPrefBoolean(PreferKey.aiFloatBallEnabled, true)
+        val scope = context.getPrefString(PreferKey.aiFloatBallScope, "both") ?: "both"
+        visibility = if (enabled && (scope == "both" || scope == hostScope)) View.VISIBLE else View.GONE
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -119,7 +135,8 @@ class AIFloatBallView @JvmOverloads constructor(
                     "preset_chapter",
                     ReadBook.curTextChapter?.title ?: ReadBook.book?.durChapterTitle
                 )
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                // 宿主是 Activity 时不要 NEW_TASK：否则会在最近任务里另起栈，返回行为异常
+                if (ctx !is Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         )
         return true

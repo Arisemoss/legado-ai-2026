@@ -4,6 +4,12 @@
 
     <PreferenceCategory android:title="1 · 服务商与凭据" app:iconSpaceReserved="false">
 
+        <androidx.preference.Preference
+            android:key="ai_rerun_setup"
+            android:title="重新运行配置向导"
+            android:summary="3 步重配服务商 / Key / 模型；跳过不等于完成，可随时重开"
+            app:iconSpaceReserved="false" />
+
         <androidx.preference.ListPreference
             android:key="ai_provider"
             android:title="服务商预设"
@@ -94,8 +100,17 @@
         <androidx.preference.SwitchPreferenceCompat
             android:key="ai_float_ball_enabled"
             android:title="显示 AI 悬浮球"
-            android:summary="主页与阅读页右下角显示可拖拽的 AI 助手悬浮球"
+            android:summary="右下角可拖拽的 AI 助手悬浮球（显示范围见下一项）"
             android:defaultValue="true"
+            app:iconSpaceReserved="false" />
+
+        <androidx.preference.ListPreference
+            android:key="ai_float_ball_scope"
+            android:title="悬浮球显示范围"
+            android:summary="避免在书架/我的页遮挡列表内容"
+            android:defaultValue="both"
+            android:entries="@array/ai_float_ball_scope_entries"
+            android:entryValues="@array/ai_float_ball_scope_values"
             app:iconSpaceReserved="false" />
 
         <androidx.preference.SwitchPreferenceCompat
@@ -138,8 +153,8 @@
 
         <androidx.preference.Preference
             android:key="ai_tools_info"
-            android:title="AI 工具清单（28 个）"
-            android:summary="搜书/读书/懂书/书源/书架/设置；所有写操作都需要你在聊天里点「同意」"
+            android:title="AI 工具清单"
+            android:summary="点开按分类查看全部工具（数量自动统计）；写操作都需要你在聊天里点「同意」"
             app:iconSpaceReserved="false" />
 
         <androidx.preference.Preference

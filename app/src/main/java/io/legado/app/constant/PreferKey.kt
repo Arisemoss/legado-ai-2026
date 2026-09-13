@@ -203,6 +203,7 @@ object PreferKey {
     const val aiSetupDone = "ai_setup_done"
     const val aiSetupShown = "ai_setup_shown"
     const val aiFloatBallEnabled = "ai_float_ball_enabled"
+    const val aiFloatBallScope = "ai_float_ball_scope"
     const val aiFloatBallSide = "ai_float_ball_side"
     const val aiFloatBallYRatio = "ai_float_ball_y_ratio"
 }

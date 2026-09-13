@@ -343,7 +343,7 @@ class AgentHubViewModel(
         AiPlatform.syncConfig()
         val cfg = AiPlatform.config
         statusLine.value = if (cfg == null || cfg.apiKey.isBlank() && needsKey(cfg.baseUrl)) {
-            "未配置模型 · 点右上角 ⚙ 设置"
+            "未配置模型 · 点右上角设置"
         } else {
             val provider = AiProviderPresets.byBaseUrl(cfg.baseUrl)?.label ?: "自定义接口"
             "${cfg.name} · $provider"
@@ -352,6 +352,12 @@ class AgentHubViewModel(
 
     private fun needsKey(baseUrl: String): Boolean =
         AiProviderPresets.byBaseUrl(baseUrl)?.needsKey ?: true
+
+    /** 是否已配置可用模型（Hub 空态据此显示「开始配置模型」） */
+    fun isConfigured(): Boolean {
+        val cfg = AiPlatform.config ?: return false
+        return cfg.apiKey.isNotBlank() || !needsKey(cfg.baseUrl)
+    }
 
     private fun maybeRename(sid: Long, text: String) {
         if (currentTitle != "新会话") return

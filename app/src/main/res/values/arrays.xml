@@ -245,4 +245,16 @@
 		<item>native</item>
 		<item>text</item>
 	</string-array>
+
+    <string-array name="ai_float_ball_scope_entries">
+		<item>主页与阅读页</item>
+		<item>仅阅读页</item>
+		<item>仅主页</item>
+	</string-array>
+
+    <string-array name="ai_float_ball_scope_values">
+		<item>both</item>
+		<item>reader</item>
+		<item>main</item>
+	</string-array>
 </resources>

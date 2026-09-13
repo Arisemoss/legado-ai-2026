@@ -94,7 +94,6 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         upBottomMenu()
         initView()
         upHomePage()
-        maybeShowAiSetup()
         handleRequestTab(intent)
         onBackPressedDispatcher.addCallback(this) {
             if (pagePosition != 0) {
@@ -124,6 +123,8 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         lifecycleScope.launch {
             //隐私协议
             if (!privacyPolicy()) return@launch
+            //AI 配置向导：必须等隐私同意之后再弹，避免首启时序错乱（曾被隐私/帮助弹窗盖住）
+            maybeShowAiSetup()
             //版本更新
             upVersion()
             //设置本地密码
@@ -146,8 +147,12 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
 
 
 
-    /** 首次进入：未配置 AI 时引导一次（可跳过，不再骚扰） */
+    /**
+     * 首次进入：未配置 AI 时引导一次。
+     * 跳过只记 aiSetupShown（不等于完成），设置页「重新运行配置向导」可随时重开。
+     */
     private fun maybeShowAiSetup() {
+        if (isFinishing || isDestroyed) return
         if (getPrefBoolean(PreferKey.aiSetupDone, false)) return
         if (getPrefBoolean(PreferKey.aiSetupShown, false)) return
         if (!io.legado.app.ai.runtime.AiKeyStore.getApiKey().isNullOrBlank()) return
@@ -169,9 +174,12 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private fun handleRequestTab(intent: Intent?) {
         val tab = intent?.getIntExtra("agent_select_tab", -1) ?: -1
         if (tab < 0) return
-        val count = binding.viewPagerMain.adapter?.count ?: 0
-        if (tab in 0 until count) {
-            binding.viewPagerMain.setCurrentItem(tab, false)
+        // 等 ViewPager 完成首次布局再切页：启动/返回瞬间直接 setCurrentItem 会出现两页叠影
+        binding.viewPagerMain.post {
+            val count = binding.viewPagerMain.adapter?.count ?: 0
+            if (tab in 0 until count) {
+                binding.viewPagerMain.setCurrentItem(tab, false)
+            }
         }
     }
 

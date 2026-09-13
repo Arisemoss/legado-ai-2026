@@ -1,34 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- AI Hub 配色 — Material 3 令牌体系（亮色）
-         来源：Book's Story (GPL-3.0) BlueTheme 亮色方案，映射到本应用键名 -->
-    <color name="ai_page_bg">#FAF8FF</color>
-    <color name="ai_accent">#485D92</color>
-    <color name="ai_accent_deep">#2C4174</color>
-    <color name="ai_accent_container">#DAE2FF</color>
-    <color name="ai_on_accent_container">#001847</color>
-    <color name="ai_text_main">#1A1B21</color>
-    <color name="ai_text_sub">#757780</color>
-    <color name="ai_bubble_user">#485D92</color>
-    <color name="ai_bubble_user_text">#FFFFFF</color>
-    <color name="ai_bubble_ai_bg">#FFFFFF</color>
-    <color name="ai_bubble_ai_stroke">#C5C6D0</color>
-    <color name="ai_tool_bg">#F4F3FA</color>
-    <color name="ai_tool_stroke">#E1E2EC</color>
+    <!-- AI 配色（2026-09 统一版）
+         中性色不再自成一派：别名到基座语义色（@color/background / primaryText / secondaryText /
+         background_card / divider / disabled），这些键本身已有 values-night 覆盖，
+         所以 AI 页面自动跟随日/夜与 App 背景、文字体系；强调色统一交给主题 ?attr/colorPrimary。
+         这里只保留 AI 自己的语义色（确认 / 错误 / 成功 / 警告）与悬浮球强调色。 -->
+    <color name="ai_page_bg">@color/background</color>
+    <color name="ai_text_main">@color/primaryText</color>
+    <color name="ai_text_sub">@color/secondaryText</color>
+    <color name="ai_header_bg">@color/background</color>
+    <color name="ai_bubble_ai_bg">@color/background_card</color>
+    <color name="ai_bubble_ai_stroke">@color/divider</color>
+    <color name="ai_tool_bg">@color/background_card</color>
+    <color name="ai_tool_stroke">@color/divider</color>
+    <color name="ai_input_bg">@color/background_card</color>
+    <color name="ai_input_stroke">@color/divider</color>
+    <color name="ai_chip_text">@color/primaryText</color>
+    <color name="ai_chip_stroke">@color/divider</color>
+    <color name="ai_menu_card">@color/background_card</color>
+    <color name="ai_menu_card_stroke">@color/divider</color>
+    <color name="ai_send_disabled">@color/disabled</color>
+
+    <!-- 强调色：跟随主题主色（需要动态取色的场景由代码用 ThemeStore.primaryColor） -->
+    <color name="ai_accent">@color/primary</color>
+    <color name="ai_accent_deep">@color/primaryDark</color>
+    <color name="ai_accent_container">@color/background_card</color>
+    <color name="ai_on_accent_container">@color/primaryText</color>
+    <color name="ai_bubble_user">@color/primary</color>
+    <color name="ai_bubble_user_text">@color/white</color>
+
+    <!-- 语义色（亮色） -->
     <color name="ai_confirm_bg">#FFF8E1</color>
     <color name="ai_confirm_stroke">#F0C24B</color>
     <color name="ai_error_bg">#FFDAD6</color>
     <color name="ai_error_stroke">#F2B8B5</color>
     <color name="ai_error_text">#BA1A1A</color>
     <color name="ai_ok_text">#1E8E3E</color>
-    <color name="ai_chip_text">#001847</color>
-    <color name="ai_chip_stroke">#C5C6D0</color>
-    <color name="ai_input_bg">#FFFFFF</color>
-    <color name="ai_input_stroke">#C5C6D0</color>
-    <color name="ai_header_bg">#FFFFFF</color>
-    <color name="ai_send_disabled">#C4CFE2</color>
-    <color name="ai_stop_bg">#BA1A1A</color>
-    <color name="ai_menu_card">#F2F5FB</color>
-    <color name="ai_menu_card_stroke">#DCE4F2</color>
     <color name="ai_warn_text">#E08E00</color>
+    <color name="ai_stop_bg">#BA1A1A</color>
 </resources>

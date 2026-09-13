@@ -1,86 +1,114 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="@color/ai_page_bg"
+    android:orientation="vertical">
 
-    <LinearLayout
+    <!-- 统一顶栏：返回（上一步）/关闭 + 标题 -->
+    <io.legado.app.ai.ui.AiTopBar
+        android:id="@+id/top_bar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:layout_height="wrap_content" />
 
-        <TextView
-            android:id="@+id/tv_step"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/primaryText"
-            android:textSize="12sp"
-            android:alpha="0.6" />
+    <TextView
+        android:id="@+id/tv_step"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="20dp"
+        android:alpha="0.7"
+        android:textColor="@color/ai_text_main"
+        android:textSize="12sp" />
 
-        <FrameLayout
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="8dp">
+
+        <ScrollView
+            android:id="@+id/page_intro"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:layout_marginTop="12dp">
+            android:layout_height="match_parent"
+            android:fillViewport="true">
 
             <LinearLayout
-                android:id="@+id/page_intro"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="12dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🤖 AI 智能助手"
-                    android:textColor="@color/primaryText"
-                    android:textSize="24sp" />
+                    android:text="AI 智能助手"
+                    android:textColor="@color/ai_text_main"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:lineSpacingExtra="6dp"
-                    android:text="让 AI 真实操作阅读器：\n\n· 跨书源找书、自动加书架\n· 读章节、总结/人物/主题分析\n· 诊断与修复书源、管理替换净化\n· 改 App 设置（写操作都会先问你）\n\n接下来 3 步完成配置，约 1 分钟。"
-                    android:textColor="@color/primaryText"
+                    android:text="让 AI 真实操作阅读器：\n\n· 跨书源找书、自动加书架\n· 读章节、总结/人物/主题分析\n· 诊断与修复书源、管理替换净化\n· 改 App 设置（写操作都会先问你）\n\n接下来 3 步完成配置，约 1 分钟；随时可跳过，之后能在「我的 → AI 智能助手 → 重新运行配置向导」重来。"
+                    android:textColor="@color/ai_text_main"
                     android:textSize="15sp" />
             </LinearLayout>
+        </ScrollView>
+
+        <LinearLayout
+            android:id="@+id/page_provider"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="选择服务商"
+                android:textColor="@color/ai_text_main"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <ListView
+                android:id="@+id/lv_provider"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginTop="8dp"
+                android:divider="@null" />
+        </LinearLayout>
+
+        <ScrollView
+            android:id="@+id/page_key"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="gone">
 
             <LinearLayout
-                android:id="@+id/page_provider"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="选择服务商"
-                    android:textColor="@color/primaryText"
-                    android:textSize="20sp" />
-
-                <ListView
-                    android:id="@+id/lv_provider"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:layout_marginTop="8dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/page_key"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:visibility="gone">
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="12dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="填写 API Key"
-                    android:textColor="@color/primaryText"
-                    android:textSize="20sp" />
+                    android:textColor="@color/ai_text_main"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tv_base_url"
@@ -88,7 +116,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:alpha="0.7"
-                    android:textColor="@color/primaryText"
+                    android:textColor="@color/ai_text_main"
                     android:textSize="12sp" />
 
                 <EditText
@@ -98,7 +126,9 @@
                     android:layout_marginTop="12dp"
                     android:hint="粘贴 API Key"
                     android:inputType="textPassword"
-                    android:maxLines="1" />
+                    android:maxLines="1"
+                    android:textColor="@color/ai_text_main"
+                    android:textColorHint="@color/ai_text_sub" />
 
                 <TextView
                     android:id="@+id/tv_key_hint"
@@ -107,7 +137,7 @@
                     android:layout_marginTop="8dp"
                     android:alpha="0.7"
                     android:text="Key 仅保存于本机（Android Keystore 加密），不会上传。"
-                    android:textColor="@color/primaryText"
+                    android:textColor="@color/ai_text_main"
                     android:textSize="12sp" />
 
                 <com.google.android.material.button.MaterialButton
@@ -122,66 +152,74 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:textColor="@color/primaryText"
+                    android:textColor="@color/ai_text_main"
                     android:textSize="13sp" />
             </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/page_model"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="选择模型"
-                    android:textColor="@color/primaryText"
-                    android:textSize="20sp" />
-
-                <ListView
-                    android:id="@+id/lv_model"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:layout_marginTop="8dp" />
-
-                <EditText
-                    android:id="@+id/et_model_manual"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="也可手动输入模型名"
-                    android:maxLines="1" />
-            </LinearLayout>
-        </FrameLayout>
+        </ScrollView>
 
         <LinearLayout
+            android:id="@+id/page_model"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="end|center_vertical"
-            android:orientation="horizontal">
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:visibility="gone">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_skip"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="跳过" />
+                android:text="选择模型"
+                android:textColor="@color/ai_text_main"
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_prev"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="上一步" />
+            <ListView
+                android:id="@+id/lv_model"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginTop="8dp"
+                android:divider="@null" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_next"
-                android:layout_width="wrap_content"
+            <EditText
+                android:id="@+id/et_model_manual"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="下一步" />
+                android:hint="也可手动输入模型名"
+                android:maxLines="1"
+                android:textColor="@color/ai_text_main"
+                android:textColorHint="@color/ai_text_sub" />
         </LinearLayout>
-    </LinearLayout>
+    </FrameLayout>
 
-</FrameLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end|center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="10dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_skip"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="跳过" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_prev"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="上一步" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_next"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="下一步" />
+    </LinearLayout>
+</LinearLayout>

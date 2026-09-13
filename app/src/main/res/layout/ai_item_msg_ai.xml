@@ -8,6 +8,7 @@
     android:paddingBottom="5dp">
 
     <TextView
+        android:id="@+id/tv_ai_avatar"
         android:layout_width="30dp"
         android:layout_height="30dp"
         android:background="@drawable/ai_bg_avatar_ai"
