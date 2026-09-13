@@ -15,7 +15,7 @@
 
 ## 验证证据（GitHub Actions）
 - 工作流：`.github/workflows/ai-port.yml`（push master/port-master 触发；matrix `[ai, app]`）。
-- 最新绿：commit `2bb1ea19d2` → run [34745170182](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34745170182)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
+- 最新绿：commit `7670bd9192` → run [34748005987](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34748005987)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
 - 单测：`ai/model/AgentErrorTest`、`ai/runtime/OpenAIClientTest`、`ai/runtime/ApprovalBusTest`、`ai/tool/TextToolCallParserTest`、`ai/tool/SuggestionEngineTest`。
 
 ## 分支
@@ -122,5 +122,6 @@
 - 修复：`ChatCompletion`/`ChatMessage` 增加 `reasoning`/`reasoning_content`；流式 `consumeChunk` 单独累积思维链（不进正文、不进打字机）；`buildBody` 在回传带 `tool_calls` 的 assistant 消息时一并回传 `reasoning_content`；无 tool_calls 的普通消息依旧不带。
 - 回归测试：`OpenAIClientTest` 新增 3 例（解析 reasoning、回传 reasoning、普通消息不带 reasoning）。
 - 附带：单轮 token 预算默认由 16000 提到 32000（真机日志实测每轮约 5.2k tokens，16k 仅够 3 轮）。
+- 验收：commit `7670bd9192` → AI Port Build [run 34748005987](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34748005987) ai/app 双 job 全绿。
 - 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。
