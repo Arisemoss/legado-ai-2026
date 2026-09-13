@@ -71,5 +71,14 @@
 - **主题色修复**：新增 `ai/ui/AiTheme.kt`，统一从 `ThemeStore`（用户自定义主题色）取色生成 drawable：发送按钮、悬浮球、用户气泡、AI 头像、chip、确认卡按钮全部运行时着色（此前用 `?attr/colorPrimary` 只能拿到静态默认色 `@color/primary`=md_light_blue_600，真机表现为「顶栏棕、悬浮球浅蓝」）。
 - `ai_item_confirm.xml` 标题去掉 🔐 emoji。
 - 验收：commit `d3d672aaa0` → AI Port Build [run 34734131100](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34734131100) ai/app 双 job 全绿。
+
+## 第七批功能（线程与生命周期修复，2026-09）
+真机日志暴露的 3 个必修问题，外加 1 个必然复现的隐患：
+
+- **设置页崩溃**：`onCreatePreferences` 阶段 Fragment 还没有 View，原实现在 `initModelPicker()` 末尾调用 `refreshModels()` 并访问 `viewLifecycleOwner`，抛 `IllegalStateException: Can't access the Fragment View's LifecycleOwner`（配置 Key 后才会走到该分支，故此前未暴露）。改为 `onViewCreated` 首次刷新 + `refreshModels()` 内 `view == null` 守卫。
+- **一键获取书源 NetworkOnMainThreadException**：`BookSourceHub` 的 `fetchEntries/importUrl/downloadText/scan` 均为 okHttp 同步 `execute()`，却在主线程调用。全部切 `withContext(Dispatchers.IO)`（`fetchEntries` 改为 `suspend`），新增私有 `downloadTextBlocking` 供内部复用。
+- **首次对话必然崩溃（隐患）**：`AgentTaskCenter` 作用域是 `Dispatchers.Main.immediate`，而 `AgentRuntime` 内部是阻塞式 HTTP（`OpenAIClient.execute()`），第一条消息就会 `NetworkOnMainThreadException`。现在 `runtime.execute` 整体包在 `withContext(Dispatchers.IO)` 中；事件回流走 StateFlow、`ApprovalBus` 本身线程安全，不受影响。
+- **设置页「测试连接」同问题**：`OpenAIClient.complete` 在 `viewLifecycleOwner.lifecycleScope`（主线程）执行，异常被 `runCatching` 吞成「连接失败」。改 `withContext(Dispatchers.IO)`。
+- **向导体验**：选择服务商后自动进入下一步；获取模型失败时回退到预设模型并放行到选模型步；完成时若模型名为空兜底写入服务商首个预设模型。
 - 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。

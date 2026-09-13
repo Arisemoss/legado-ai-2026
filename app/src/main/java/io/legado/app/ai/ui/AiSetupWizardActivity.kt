@@ -66,6 +66,9 @@ class AiSetupWizardActivity : BaseActivity<ActivityAiSetupBinding>() {
                 it.models.firstOrNull()?.let { m -> putPrefString(PreferKey.aiModel, m) }
             }
             render()
+            // 选完服务商直接进入下一步（原先停在原地，用户以为没生效）
+            step = 2
+            render()
         }
         binding.lvModel.adapter = ArrayAdapter(this, R.layout.ai_item_wizard_choice, models)
         binding.lvModel.choiceMode = android.widget.ListView.CHOICE_MODE_SINGLE
@@ -143,8 +146,20 @@ class AiSetupWizardActivity : BaseActivity<ActivityAiSetupBinding>() {
                     render()
                 },
                 onFailure = { e ->
-                    binding.tvFetchStatus.text =
-                        "获取失败：${e.localizedMessage ?: e.javaClass.simpleName}（可跳过，稍后在设置页重试）"
+                    val why = e.localizedMessage ?: e.javaClass.simpleName
+                    // 失败也要能继续：回退到服务商预设模型并进入选模型步，避免用户卡在第 2 步
+                    models.clear()
+                    models.addAll(provider?.models.orEmpty())
+                    (binding.lvModel.adapter as? ArrayAdapter<String>)?.notifyDataSetChanged()
+                    if (models.isNotEmpty()) {
+                        binding.tvFetchStatus.text =
+                            "获取失败：$why\n已改用预设模型列表（${models.size} 个），可直接点「下一步」或手动填写"
+                        step = 3
+                        render()
+                    } else {
+                        binding.tvFetchStatus.text =
+                            "获取失败：$why（可点「跳过」，稍后在设置页重试）"
+                    }
                 }
             )
         }
@@ -162,6 +177,10 @@ class AiSetupWizardActivity : BaseActivity<ActivityAiSetupBinding>() {
         } else {
             val manual = binding.etModelManual.text?.toString()?.trim().orEmpty()
             if (manual.isNotBlank()) putPrefString(PreferKey.aiModel, manual)
+            // 兜底：确保一定写入模型名，否则 Hub 仍显示「未配置模型」
+            if (getPrefString(PreferKey.aiModel).isNullOrBlank()) {
+                provider?.models?.firstOrNull()?.let { putPrefString(PreferKey.aiModel, it) }
+            }
             putPrefBoolean(PreferKey.aiSetupDone, true)
             toast("配置完成，开始使用 AI 助手")
             startActivity(Intent(this, AgentHubActivity::class.java))

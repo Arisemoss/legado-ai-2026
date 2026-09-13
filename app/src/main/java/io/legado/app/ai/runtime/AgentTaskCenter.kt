@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Agent 后台任务中心（RikkaHub 式「生成不依赖页面」）。
@@ -102,7 +103,11 @@ object AgentTaskCenter {
             runCatching { conversation.appendText(sessionId, "user", prompt) }
 
             val result = runCatching {
-                AiPlatform.runtime.execute(prompt, history, sharedCtx, systemPrompt)
+                // Agent 循环内部是阻塞式 HTTP（OpenAIClient 同步 execute），必须离开主线程，
+                // 否则第一条消息就会 NetworkOnMainThreadException（Room 允许主线程查询，网络不允许）
+                withContext(Dispatchers.IO) {
+                    AiPlatform.runtime.execute(prompt, history, sharedCtx, systemPrompt)
+                }
             }.getOrElse {
                 AiLog.e("Task", "execute 异常", it)
                 AgentResult(it.localizedMessage ?: "执行出错", AgentResultState.ERROR)

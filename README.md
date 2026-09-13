@@ -56,3 +56,8 @@ Legado / 开源阅读
 - 🫧 **悬浮球**：新增「显示范围」（主页与阅读页 / 仅阅读页 / 仅主页），不再在书架、我的页遮挡列表；点击不再另起任务栈。
 - 🧩 其它：空态快捷 chip 末项不再被裁切；MainActivity 向导时机与 tab 切换时序修正（避免启动/返回瞬间两页叠影）。
 
+### 修复（2026-09 第七批 · 真机崩溃与主线程网络）
+- 💥 **设置页崩溃**：`AiConfigFragment` 在 `onCreatePreferences` 阶段访问 `viewLifecycleOwner` 抛 `IllegalStateException`（配好 Key 后必现）→ 首次刷新移到 `onViewCreated` 并加空视图守卫。
+- 🌐 **主线程网络**：`BookSourceHub`（一键获取书源）与「测试连接」的阻塞式 okHttp 调用改到 IO 线程；并修掉**首次对话必然 `NetworkOnMainThreadException` 的隐患**（`AgentTaskCenter` 在主线程作用域内执行 Agent 循环）。
+- 🧭 **向导**：选服务商后自动进入下一步；获取模型失败回退预设模型并放行；完成时兜底写入模型名。
+

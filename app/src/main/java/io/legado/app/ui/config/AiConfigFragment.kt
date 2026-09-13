@@ -3,6 +3,7 @@ package io.legado.app.ui.config
 import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
+import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -26,7 +27,9 @@ import io.legado.app.utils.getPrefString
 import io.legado.app.utils.putPrefString
 import io.legado.app.utils.removePref
 import java.io.File
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * AI 平台配置（移植自 Arisemoss/legado，2026 基线 PreferenceFragment 版）。
@@ -123,15 +126,18 @@ class AiConfigFragment : PreferenceFragment() {
             pref.summary = "测试中…"
             viewLifecycleOwner.lifecycleScope.launch {
                 val cfg = ModelManager.getConfig()
-                val result = runCatching {
-                    val client = OpenAIClient(
-                        baseUrl = cfg.baseUrl,
-                        apiKey = cfg.apiKey,
-                        model = cfg.name,
-                        timeoutMillis = cfg.timeoutMillis,
-                        textToolMode = cfg.toolProtocol == AiModelConfig.PROTOCOL_TEXT
-                    )
-                    client.complete(listOf(ChatMessage(role = "user", content = "ping")), null, false)
+                // 阻塞式 HTTP：必须切 IO，否则在主线程必然抛 NetworkOnMainThreadException
+                val result = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val client = OpenAIClient(
+                            baseUrl = cfg.baseUrl,
+                            apiKey = cfg.apiKey,
+                            model = cfg.name,
+                            timeoutMillis = cfg.timeoutMillis,
+                            textToolMode = cfg.toolProtocol == AiModelConfig.PROTOCOL_TEXT
+                        )
+                        client.complete(listOf(ChatMessage(role = "user", content = "ping")), null, false)
+                    }
                 }
                 pref.isEnabled = true
                 pref.summary = result.fold(
@@ -174,6 +180,9 @@ class AiConfigFragment : PreferenceFragment() {
                 true
             }
         }
+        // 注意：这里不能调用 refreshModels()——onCreatePreferences 阶段 Fragment 还没有 View，
+        // 访问 viewLifecycleOwner 会抛 IllegalStateException（真机崩溃日志：AiConfigFragment.refreshModels:210）。
+        // 首次刷新改到 onViewCreated 里做。
         findPreference<Preference>("ai_tools_info")?.let { pref ->
             // 数量动态取注册表，不再硬编码（曾写死 28，实际 32）
             val count = runCatching { AiPlatform.registry.definitions().size }.getOrDefault(0)
@@ -192,11 +201,17 @@ class AiConfigFragment : PreferenceFragment() {
             startActivity(Intent(requireContext(), AiSetupWizardActivity::class.java))
             true
         }
+    }
+
+    /** 视图就绪后再首次拉取模型列表（onCreatePreferences 阶段无 View，不能碰 viewLifecycleOwner） */
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         refreshModels()
     }
 
     /** 拉取 /models 并回填列表；失败回退到服务商预设模型 */
     private fun refreshModels() {
+        if (!isAdded) return
         val ctx = requireContext()
         val pick = modelPick ?: return
         val refresh = refreshPref
@@ -205,6 +220,8 @@ class AiConfigFragment : PreferenceFragment() {
             refresh?.summary = "先填写 API Key 再刷新"
             return
         }
+        // 视图未就绪（onCreatePreferences 阶段）直接跳过，避免 IllegalStateException
+        if (view == null) return
         refresh?.isEnabled = false
         refresh?.summary = "拉取中…"
         viewLifecycleOwner.lifecycleScope.launch {

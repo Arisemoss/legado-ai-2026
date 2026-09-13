@@ -8,6 +8,8 @@ import io.legado.app.help.source.SourceHelp
 import io.legado.app.utils.GSON
 import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.fromJsonObject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.net.URLDecoder
 
@@ -29,32 +31,33 @@ object BookSourceHub {
 
     private val linkRegex = Regex("yuedu://booksource/importonline\\?src=([^\"'\\s&<>]+)")
 
-    /** 抓聚合页并解析出可导入的书源地址列表 */
-    fun fetchEntries(pageUrl: String = DEFAULT_PAGE): Result<List<Entry>> = runCatching {
-        val req = Request.Builder().url(pageUrl).get().build()
-        val html = okHttpClient.newCall(req).execute().use { resp ->
-            if (!resp.isSuccessful) throw RuntimeException("HTTP ${resp.code}")
-            resp.body?.string().orEmpty()
+    /**
+     * 抓聚合页并解析出可导入的书源地址列表。
+     * 注意：okHttp 同步 execute 是阻塞调用，必须切到 IO 线程，
+     * 否则在主线程调用会抛 NetworkOnMainThreadException（真机已复现）。
+     */
+    suspend fun fetchEntries(pageUrl: String = DEFAULT_PAGE): Result<List<Entry>> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val html = downloadTextBlocking(pageUrl)
+                linkRegex.findAll(html).map { m ->
+                    val raw = m.groupValues[1]
+                    val src = runCatching { URLDecoder.decode(raw, "UTF-8") }.getOrDefault(raw)
+                    Entry(titleOf(src), src)
+                }.distinctBy { it.src }.toList()
+            }
         }
-        linkRegex.findAll(html).map { m ->
-            val raw = m.groupValues[1]
-            val src = runCatching { URLDecoder.decode(raw, "UTF-8") }.getOrDefault(raw)
-            Entry(titleOf(src), src)
-        }.distinctBy { it.src }.toList()
-    }
 
-    /** 下载单个书源地址（JSON 数组 / 每行一个 JSON 的 TXT）并入库 */
-    suspend fun importUrl(src: String): Result<Int> = runCatching {
-        val req = Request.Builder().url(src).get().build()
-        val text = okHttpClient.newCall(req).execute().use { resp ->
-            if (!resp.isSuccessful) throw RuntimeException("HTTP ${resp.code}")
-            resp.body?.string().orEmpty()
-        }
+    /** 下载单个书源地址（JSON 数组 / 每行一个 JSON 的 TXT）并入库（IO 线程） */
+    suspend fun importUrl(src: String): Result<Int> = withContext(Dispatchers.IO) {
+        runCatching {
+        val text = downloadTextBlocking(src)
         val sources = parseSources(text)
         if (sources.isEmpty()) throw RuntimeException("未解析到书源")
         SourceHelp.insertBookSource(*sources.toTypedArray())
         AiLog.i("SourceHub", "导入 ${sources.size} 条 ← ${titleOf(src)}")
         sources.size
+        }
     }
 
     /** 批量导入全部条目 */
@@ -110,8 +113,12 @@ object BookSourceHub {
         val error: String? = null
     )
 
-    /** 下载并解析单条书源（供导入与预扫描共用） */
-    suspend fun downloadText(src: String): String {
+    /** 下载并解析单条书源（供导入与预扫描共用），内部切 IO 线程 */
+    suspend fun downloadText(src: String): String =
+        withContext(Dispatchers.IO) { downloadTextBlocking(src) }
+
+    /** 阻塞式下载：调用方必须已处于 IO 线程 */
+    private fun downloadTextBlocking(src: String): String {
         val req = Request.Builder().url(src).get().build()
         return okHttpClient.newCall(req).execute().use { resp ->
             if (!resp.isSuccessful) throw RuntimeException("HTTP ${resp.code}")
@@ -119,8 +126,9 @@ object BookSourceHub {
         }
     }
 
-    /** 预扫描：解析条目内书源数量/更新时间，并判断本地是否已存在、是否可更新 */
-    suspend fun scan(entry: Entry): ScanResult = runCatching {
+    /** 预扫描：解析条目内书源数量/更新时间，并判断本地是否已存在、是否可更新（IO 线程） */
+    suspend fun scan(entry: Entry): ScanResult = withContext(Dispatchers.IO) {
+        runCatching {
         val text = downloadText(entry.src)
         val list = parseSources(text)
         val newest = list.maxOfOrNull { it.lastUpdateTime } ?: 0L
@@ -135,5 +143,6 @@ object BookSourceHub {
         )
     }.getOrElse { e ->
         ScanResult(entry, 0, 0L, false, false, e.localizedMessage ?: e.javaClass.simpleName)
+    }
     }
 }
