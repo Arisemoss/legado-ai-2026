@@ -15,7 +15,7 @@
 
 ## 验证证据（GitHub Actions）
 - 工作流：`.github/workflows/ai-port.yml`（push master/port-master 触发；matrix `[ai, app]`）。
-- 最新绿：commit `d7eac17306` → run [34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
+- 最新绿：commit `d3d672aaa0` → run [34734131100](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34734131100)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
 - 单测：`ai/model/AgentErrorTest`、`ai/runtime/OpenAIClientTest`、`ai/runtime/ApprovalBusTest`、`ai/tool/TextToolCallParserTest`、`ai/tool/SuggestionEngineTest`。
 
 ## 分支
@@ -70,5 +70,6 @@
 - **崩溃修复（重要）**：AI 层 4 个布局（Hub / 向导 / 书源检测 / 书源导入）里的 15 个 `com.google.android.material.button.MaterialButton` 全部替换为 `androidx.appcompat.widget.AppCompatButton`——本应用主题是 `Theme.AppCompat.DayNight.NoActionBar`（基座 0 处 MaterialButton），MaterialButton 在 inflate 时抛 `IllegalArgumentException: The style on this component requires your app theme to be Theme.MaterialComponents`，表现为「Unable to start activity」直接闪退。**这正是此前「新手引导不能正常显示」的真正原因**（向导一直崩，不是没弹）。`Widget.MaterialComponents.Button.TextButton` → `?android:attr/borderlessButtonStyle`，并补 `minWidth=0` 防止一行多按钮溢出。
 - **主题色修复**：新增 `ai/ui/AiTheme.kt`，统一从 `ThemeStore`（用户自定义主题色）取色生成 drawable：发送按钮、悬浮球、用户气泡、AI 头像、chip、确认卡按钮全部运行时着色（此前用 `?attr/colorPrimary` 只能拿到静态默认色 `@color/primary`=md_light_blue_600，真机表现为「顶栏棕、悬浮球浅蓝」）。
 - `ai_item_confirm.xml` 标题去掉 🔐 emoji。
+- 验收：commit `d3d672aaa0` → AI Port Build [run 34734131100](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34734131100) ai/app 双 job 全绿。
 - 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。
