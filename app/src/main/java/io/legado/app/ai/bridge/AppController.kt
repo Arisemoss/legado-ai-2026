@@ -46,4 +46,12 @@ interface AppController {
     suspend fun enableReplaceRule(id: Long, enabled: Boolean): Map<String, Any>
 
     /** 书源：删除（写库） */
-    suspend fun deleteSource(url: String): Map<String, Any>}
+    suspend fun deleteSource(url: String): Map<String, Any>
+    /** 书架：批量加入书架（写库） */
+    suspend fun addToShelfBatch(books: List<Map<String, Any?>>): Map<String, Any>
+
+    /** 替换净化：从 JSON 文本或 URL 导入规则（写库） */
+    suspend fun importReplaceRules(source: String): Map<String, Any>
+
+    /** 设置：把某项恢复默认值（写库） */
+    suspend fun resetSetting(key: String): Map<String, Any>}

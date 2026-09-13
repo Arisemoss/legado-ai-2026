@@ -45,5 +45,10 @@ fun buildRegistry(bridge: AiBridge): ToolRegistry {
     r.register(ManageReplaceRuleTool(bridge))
     // 书源删除
     r.register(DeleteSourceTool(bridge))
+    // 批量与导入（P1）
+    r.register(BatchAddToShelfTool(bridge))
+    r.register(TestSourcesBatchTool())
+    r.register(ImportReplaceRulesTool(bridge))
+    r.register(ResetSettingTool(bridge))
     return r
 }

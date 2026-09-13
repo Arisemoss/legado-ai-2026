@@ -2,6 +2,8 @@ package io.legado.app.ai.bridge
 
 import io.legado.app.data.appDb
 import io.legado.app.constant.PreferKey
+import io.legado.app.utils.GSON
+import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.putPrefBoolean
 import splitties.init.appCtx
 import io.legado.app.constant.BookType
@@ -9,6 +11,8 @@ import io.legado.app.data.entities.ReplaceRule
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.help.book.ContentProcessor
 import io.legado.app.help.config.AppConfig
+import io.legado.app.help.http.okHttpClient
+import okhttp3.Request
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -325,4 +329,75 @@ class DefaultAppController : AppController {
         is String -> v.trim().equals("true", true) || v.trim() == "1"
         is Number -> v.toInt() != 0
         else -> false
-    }}
+    }
+    override suspend fun addToShelfBatch(books: List<Map<String, Any?>>): Map<String, Any> =
+        withContext(Dispatchers.IO) {
+            var ok = 0
+            var exists = 0
+            var failed = 0
+            val names = ArrayList<String>()
+            books.take(20).forEach { b ->
+                val r = addToShelf(b)
+                when {
+                    r["ok"] != true -> failed++
+                    r["alreadyExists"] == true -> exists++
+                    else -> { ok++; names.add(b["name"]?.toString().orEmpty()) }
+                }
+            }
+            mapOf(
+                "ok" to true,
+                "added" to ok,
+                "exists" to exists,
+                "failed" to failed,
+                "addedNames" to names
+            )
+        }
+
+    override suspend fun importReplaceRules(source: String): Map<String, Any> =
+        withContext(Dispatchers.IO) {
+            val text = runCatching {
+                if (source.startsWith("http", true)) downloadText(source) else source
+            }.getOrElse {
+                return@withContext mapOf("ok" to false, "message" to "下载失败：${it.localizedMessage}")
+            }
+            val t = text.trim()
+            if (t.isEmpty()) return@withContext mapOf("ok" to false, "message" to "内容为空")
+            val rules = runCatching {
+                GSON.fromJsonArray<ReplaceRule>(t).getOrThrow()
+            }.getOrElse {
+                return@withContext mapOf("ok" to false, "message" to "解析失败（需为替换规则 JSON 数组）")
+            }
+            if (rules.isEmpty()) return@withContext mapOf("ok" to false, "message" to "未解析到规则")
+            appDb.replaceRuleDao.insert(*rules.toTypedArray())
+            ContentProcessor.upReplaceRules()
+            mapOf("ok" to true, "imported" to rules.size)
+        }
+
+    override suspend fun resetSetting(key: String): Map<String, Any> =
+        withContext(Dispatchers.IO) {
+            when (key) {
+                "nightTheme" -> { AppConfig.isNightTheme = false; ok(key) }
+                "themeMode" -> { AppConfig.themeMode = "0"; ok(key) }
+                "eInk" -> { AppConfig.isEInkMode = false; ok(key) }
+                "threadCount" -> { AppConfig.threadCount = 16; ok(key) }
+                "ttsSpeechRate" -> { AppConfig.ttsSpeechRate = 5; ok(key) }
+                "chineseConverterType" -> { AppConfig.chineseConverterType = 0; ok(key) }
+                "showUnread" -> { AppConfig.showUnread = true; ok(key) }
+                "bookshelfLayout" -> { AppConfig.bookshelfLayout = 0; ok(key) }
+                "bookGroupStyle" -> { AppConfig.bookGroupStyle = 0; ok(key) }
+                "recordLog" -> { AppConfig.recordLog = false; ok(key) }
+                "readUrlInBrowser" -> { AppConfig.readUrlInBrowser = false; ok(key) }
+                else -> mapOf("ok" to false, "message" to "不支持的设置项: $key")
+            }
+        }
+
+    private fun ok(key: String): Map<String, Any> =
+        mapOf("ok" to true, "key" to key, "message" to "已恢复默认值")
+    private fun downloadText(url: String): String {
+        val req = Request.Builder().url(url).get().build()
+        return okHttpClient.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) throw RuntimeException("HTTP ${resp.code}")
+            resp.body?.string().orEmpty()
+        }
+    }
+}
