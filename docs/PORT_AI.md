@@ -123,5 +123,17 @@
 - 回归测试：`OpenAIClientTest` 新增 3 例（解析 reasoning、回传 reasoning、普通消息不带 reasoning）。
 - 附带：单轮 token 预算默认由 16000 提到 32000（真机日志实测每轮约 5.2k tokens，16k 仅够 3 轮）。
 - 验收：commit `7670bd9192` → AI Port Build [run 34748005987](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34748005987) ai/app 双 job 全绿。
+
+## 第十批功能（AI 层自查修复，2026-09）
+自查范围：运行时内核（AgentRuntime / OpenAIClient / AgentHubViewModel / ToolContext）+ 工具层 / 桥接层 / 书源层（子代理并行审查）。以下为**已确证并修复**的问题：
+
+1. **后台确认卡丢失（上批 A-4 改造引入的回归，P1）**：onConfirmRequested 是 SharedFlow(replay=0)，**没有订阅者时发射会被直接丢弃**；而"用户离开 Hub、后台任务里出现写操作"是常态（要等最多 5 分钟）→ 回来时确认卡丢失、任务被当成拒绝。修法：ToolContext 增加 @Volatile pendingConfirm sticky 槽，运行时写入、决策后清空，VM attach() 时补卡。
+2. **并行工具卡互相覆盖（P2）**：onToolEvent 原为 StateFlow 单槽，整批并行执行时事件互相覆盖 → 真机上 4 个工具只出现 1 张卡。改为 MutableSharedFlow(extraBufferCapacity=64) 队列消费。
+3. **流式中途停止被当成正常回答（P2）**：用户在流式输出中停止后，主循环仍以 DONE 返回，UI 不显示「已停止」。现在补 stopRequested 检查并返回 STOPPED。
+4. **悬浮球可能定位到屏幕外（P2）**：restorePosition() 在父容器尚未测量（width=0）时按宽度算坐标会得到负值；改为有界重试直到布局完成。
+5. **流式输出默认值不一致（P3）**：XML 声明 defaultValue=true，但 ModelManager 默认读 false → 没进过设置页的用户实际是非流式。已对齐为 true。
+6. **删除/清空运行中的会话产生孤儿消息（P3）**：deleteSession / clearCurrentMessages 未先停任务，回答会写回已删除的会话。补 ensureIdle()。
+7. **跨线程可见性（P3）**：AiPlatform.runtime / bridge / registry 由 UI 线程重建、IO 线程读取，补 @Volatile。
+8. **书源 URL 字段可写入危险 scheme（P2 安全）**：白名单原本只校验 key 不校验 value，searchUrl / exploreUrl / loginUrl 可被写入 javascript: / file: / content: / data:。已拒绝并记日志。
 - 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。

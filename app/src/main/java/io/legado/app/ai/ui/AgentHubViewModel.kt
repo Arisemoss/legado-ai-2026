@@ -147,6 +147,7 @@ class AgentHubViewModel(
             }
             scope?.launch { refreshSessions() }
             pendingConfirms.clear()
+            ctx.pendingConfirm = null
         }
     }
 
@@ -156,26 +157,22 @@ class AgentHubViewModel(
         this.scope = scope
         AgentTaskCenter.addFinishListener(taskListener)
 
+        // 工具事件改为队列消费：原 StateFlow 单槽在整批并行工具下互相覆盖
+        // （真机 4 个工具只显示 1 张卡、部分卡片停在「执行中」）
         vmJobs += scope.launch {
-            while (isActive) {
-                val ev = ctx.onToolEvent.value
-                if (ev == null) {
-                    kotlinx.coroutines.delay(80)
-                    continue
-                }
-                mergeToolCard(ev)
-                ctx.onToolEvent.value = null
-            }
+            ctx.onToolEvent.collect { ev -> mergeToolCard(ev) }
         }
         // 审计 A-4：确认请求改为 SharedFlow 队列消费（原 StateFlow 单槽 + 120ms 轮询会覆盖丢卡）
         vmJobs += scope.launch {
-            ctx.onConfirmRequested.collect { req ->
-                if (pendingConfirms.add(req.confirmToken)) {
-                    appendRow(
-                        ChatRow.Confirm(confirmKey(req), req.confirmToken, renderProposal(req), null)
-                    )
-                }
-            }
+            ctx.onConfirmRequested.collect { req -> showConfirmIfNew(req) }
+        }
+        // 重新进入页面时补出「离开期间到达」的确认请求（SharedFlow 无订阅者会丢弃，靠 sticky 槽兜底）
+        ctx.pendingConfirm?.let { req -> showConfirmIfNew(req) }
+    }
+
+    private fun showConfirmIfNew(req: ConfirmRequest) {
+        if (pendingConfirms.add(req.confirmToken)) {
+            appendRow(ChatRow.Confirm(confirmKey(req), req.confirmToken, renderProposal(req), null))
         }
     }
 
@@ -223,6 +220,8 @@ class AgentHubViewModel(
     }
 
     suspend fun deleteSession(id: Long) {
+        // 删除的若是正在运行的会话，先生成任务停止，避免其把回答写回已删除的会话（产生孤儿消息）
+        ensureIdle()
         conversation.delete(id)
         if (id == sessionId.value) {
             val next = sessions.value.filter { it.id != id }.firstOrNull()?.id
@@ -233,6 +232,7 @@ class AgentHubViewModel(
     }
 
     suspend fun clearCurrentMessages() {
+        ensureIdle()
         conversation.delete(sessionId.value)
         loadInto(conversation.create(title = currentTitle))
         refreshSessions()
@@ -242,9 +242,9 @@ class AgentHubViewModel(
         sessionId.value = sid
         ctx.sessionId = sid
         ctx.stopRequested.value = false
-        ctx.onToolEvent.value = null
         ctx.onPartialText.value = null
         pendingConfirms.clear()
+        ctx.pendingConfirm = null
         currentTitle = sessions.value.find { it.id == sid }?.title ?: "新会话"
 
         val loaded = conversation.loadChat(sid)
@@ -333,6 +333,7 @@ class AgentHubViewModel(
             if (it is ChatRow.Confirm && it.token == token) it.copy(decided = approved) else it
         }
         pendingConfirms.remove(token)
+        if (ctx.pendingConfirm?.confirmToken == token) ctx.pendingConfirm = null
     }
 
     private fun ensureIdle() {

@@ -71,7 +71,9 @@ object ModelManager {
             name = model,
             baseUrl = baseUrl,
             apiKey = AiKeyStore.getApiKey(),
-            stream = prefs.prefBooleanSafe(PreferKey.aiStream),
+            // 默认 true 与 pref_config_ai.xml 的 defaultValue 保持一致
+            // （原先默认 false：没进过设置页的用户实际拿到"非流式"，与界面显示相反）
+            stream = prefs.prefBooleanSafe(PreferKey.aiStream, true),
             timeoutMillis = prefs.prefStringSafe(PreferKey.aiTimeout)?.toLongOrNull() ?: 120_000L,
             maxRounds = prefs.prefStringSafe(PreferKey.aiMaxRounds)?.toIntOrNull() ?: 5,
             maxTokens = prefs.prefStringSafe(PreferKey.aiMaxTokens)?.toIntOrNull() ?: 32_000,

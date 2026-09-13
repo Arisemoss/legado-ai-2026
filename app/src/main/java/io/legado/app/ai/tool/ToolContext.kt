@@ -34,8 +34,16 @@ class ToolContext(
         extraBufferCapacity = 8,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     ),
+    /**
+     * 工具事件。原为 StateFlow 单槽：整批并行执行时事件互相覆盖，
+     * 真机表现为「4 个工具只出现 1 张卡、部分卡片停在执行中」——改为队列语义（大缓冲）。
+     */
+    val onToolEvent: MutableSharedFlow<ToolEvent> = MutableSharedFlow(
+        replay = 0,
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    ),
     val onNavigate: MutableStateFlow<io.legado.app.ai.bridge.AppNav?> = MutableStateFlow(null),
-    val onToolEvent: MutableStateFlow<ToolEvent?> = MutableStateFlow(null),
     /** 流式输出的累积增量文本；null 表示当前没有进行中的流式回答 */
     val onPartialText: MutableStateFlow<String?> = MutableStateFlow(null)
 ) {
@@ -45,4 +53,13 @@ class ToolContext(
 
     /** 是否允许写操作二次确认；置 false 进入「无确认」上下文，写类工具会被前置拒绝（Harness 审批分级） */
     var allowConfirm: Boolean = true
+
+    /**
+     * 最近一次「待确认」请求（sticky）。
+     * onConfirmRequested 是 SharedFlow(replay=0)：**没有订阅者时会直接丢弃发射**，
+     * 而后台任务期间用户离开页面是常态（确认要等最多 5 分钟），
+     * 于是重新进入页面时确认卡会丢、任务被当成拒绝。此槽位用于补卡，决策后清空。
+     */
+    @Volatile
+    var pendingConfirm: ConfirmRequest? = null
 }

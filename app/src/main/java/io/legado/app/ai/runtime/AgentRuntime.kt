@@ -70,7 +70,7 @@ class AgentRuntime(
         elapsedMs: Long = 0L,
         actions: List<SuggestedAction> = emptyList()
     ) {
-        ctx.onToolEvent.value = ToolEvent(
+        ctx.onToolEvent.tryEmit(ToolEvent(
             seq = ++eventSeq,
             callId = callId,
             toolName = toolName,
@@ -79,7 +79,7 @@ class AgentRuntime(
             detail = detail,
             elapsedMs = elapsedMs,
             actions = actions
-        )
+        ))
     }
 
     /** 结果阶段的建议动作：出错时不给（避免引导用户在失败结果上继续操作） */
@@ -154,6 +154,12 @@ class AgentRuntime(
                 return AgentResult(answerContent ?: "已达预算上限", AgentResultState.BUDGET_EXCEEDED, billed, rounds)
             }
 
+            // 流式输出中被用户停止：不能当正常回答返回（否则 UI 不显示「已停止」，还会继续跑工具）
+            if (ctx.stopRequested.value) {
+                AiLog.i("Agent", "用户在输出过程中停止")
+                return AgentResult(answerContent ?: lastAnswer(messages), AgentResultState.STOPPED, billed, rounds)
+            }
+
             if (calls.isNullOrEmpty()) {
                 return AgentResult(answerContent ?: "无回复", AgentResultState.DONE, billed, rounds)
             }
@@ -206,9 +212,13 @@ class AgentRuntime(
                                     argsPreview = previewArgs(res.args),
                                     detail = "写操作待确认…"
                                 )
-                                ctx.onConfirmRequested.tryEmit(ConfirmRequest(call.id, res.args))
+                                val request = ConfirmRequest(call.id, res.args)
+                                // sticky 槽：用户离开页面时仍能在回来时补出确认卡（SharedFlow 无订阅者会丢）
+                                ctx.pendingConfirm = request
+                                ctx.onConfirmRequested.tryEmit(request)
                                 AiLog.w("Confirm", "写操作待确认: ${res.def.id} args=${previewArgs(res.args)}")
                                 val approved = awaitApproval(ctx, call.id)
+                                if (ctx.pendingConfirm?.confirmToken == call.id) ctx.pendingConfirm = null
                                 AiLog.i("Confirm", "${res.def.id} → ${if (approved) "用户同意" else "用户拒绝"}")
                                 postEvent(
                                     ctx, calls[i].id, res.def.id,

@@ -161,8 +161,16 @@ class AIFloatBallView @JvmOverloads constructor(
         savePosition(targetX)
     }
 
+    private var restoreAttempts = 0
+
     private fun restorePosition() {
         val parent = parent as? ViewGroup ?: return
+        // 初始化时父容器可能还没测量（width=0），此时按宽度算坐标会落到屏幕外；重试到布局完成
+        if (parent.width == 0 && restoreAttempts < 20) {
+            restoreAttempts++
+            post { restorePosition() }
+            return
+        }
         val side = context.getPrefString(PreferKey.aiFloatBallSide, "R") ?: "R"
         val ratio = context.getPrefString(PreferKey.aiFloatBallYRatio)?.toFloatOrNull() ?: 0.72f
         x = if (side == "L") 0f else (parent.width - width).toFloat()

@@ -28,8 +28,10 @@ object AiPlatform {
     private var lastConfig: AiModelConfig? = null
     private val lock = Any()
 
+    @Volatile
     lateinit var runtime: AgentRuntime
         private set
+    @Volatile
     lateinit var bridge: AiBridge
         private set
 
@@ -37,6 +39,7 @@ object AiPlatform {
      * 全局工具注册表。与模型配置解耦：init() 时装配一次，
      * 供 AgentRuntime 执行与 SystemPromptBuilder 生成文本协议工具清单。
      */
+    @Volatile
     lateinit var registry: io.legado.app.ai.tool.ToolRegistry
         private set
 

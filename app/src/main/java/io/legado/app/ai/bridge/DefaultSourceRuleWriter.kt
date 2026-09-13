@@ -30,6 +30,11 @@ class DefaultSourceRuleWriter : SourceRuleWriter {
         private val RULE_GROUPS = setOf(
             "ruleExplore", "ruleSearch", "ruleBookInfo", "ruleToc", "ruleContent"
         )
+
+        /** URL 类字段：禁止写入 javascript:/file:/content:/data:/intent: 等危险 scheme */
+        private val URL_FIELDS = setOf("searchUrl", "exploreUrl", "loginUrl")
+        private val DANGEROUS_SCHEME =
+            Regex("""(?i)\b(javascript|file|content|data|intent)\s*:""")
     }
 
     override suspend fun apply(url: String, changes: Map<String, String>): Boolean =
@@ -46,8 +51,13 @@ class DefaultSourceRuleWriter : SourceRuleWriter {
                     val field = if (dot > 0) key.substring(dot + 1) else null
                     when {
                         field == null && group in TOP_FIELDS -> {
-                            root.addProperty(group, value)
-                            applied++
+                            // 审计建议：白名单之外再挡一层危险 scheme
+                            if (group in URL_FIELDS && DANGEROUS_SCHEME.containsMatchIn(value)) {
+                                AiLog.w("SourceWriter", "已拒绝危险 scheme: $group=${value.take(80)}")
+                            } else {
+                                root.addProperty(group, value)
+                                applied++
+                            }
                         }
                         field != null && group in RULE_GROUPS &&
                             root.has(group) && !root.get(group).isJsonNull -> {

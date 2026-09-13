@@ -89,8 +89,9 @@ object AgentTaskCenter {
         sharedCtx.sessionId = sessionId
         sharedCtx.preset = preset
         sharedCtx.stopRequested.value = false
-        // onConfirmRequested 已改为 SharedFlow 队列（审计 A-4），无需也无法在此清空
-        sharedCtx.onToolEvent.value = null
+        // onConfirmRequested / onToolEvent 已改为 SharedFlow 队列（审计 A-4），无需也无法在此清空；
+        // 但上一条任务遗留的「待确认」槽必须清掉，否则新任务会补出一张过期确认卡
+        sharedCtx.pendingConfirm = null
         sharedCtx.onPartialText.value = null
 
         snapshot = Snapshot(
