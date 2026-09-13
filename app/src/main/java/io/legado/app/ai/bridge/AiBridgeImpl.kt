@@ -8,6 +8,7 @@ import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.help.book.BookHelp
 import io.legado.app.model.webBook.WebBook
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
@@ -61,6 +62,9 @@ class DefaultBookFetcher : BookFetcher {
                                 "源《${source.bookSourceName}》${r.size}条 ${System.currentTimeMillis() - s}ms"
                             )
                             r
+                        } catch (e: CancellationException) {
+                            // 用户停止/外层取消：必须向上传播，不能谎报成「该源 0 条」
+                            throw e
                         } catch (_: Exception) {
                             AiLog.w("Fetch", "源《${source.bookSourceName}》失败")
                             emptyList<SearchBook>()
@@ -131,6 +135,8 @@ class DefaultChapterReader : ChapterReader {
                                     bookChapter = chapter
                                 )
                             }
+                        } catch (e: CancellationException) {
+                            throw e // 取消不是「抓取失败」
                         } catch (_: Exception) {
                             null
                         }
@@ -142,6 +148,8 @@ class DefaultChapterReader : ChapterReader {
                     AiLog.w("Chapter", "正文获取失败:《${book.name}》·${chapter.title}")
                 }
                 content?.takeIf { it.isNotBlank() }
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 null
             }
@@ -150,14 +158,22 @@ class DefaultChapterReader : ChapterReader {
     private fun resolveBook(bookName: String): Book? =
         appDb.bookDao.findByName(bookName).firstOrNull()
 
+    /**
+     * 章节定位（审计修复）：
+     * - 指定了章节名但匹配不到时返回 null，不再静默回退到「当前阅读章节」——
+     *   否则工具会把第 1 章正文当成用户要的那一章上报，模型据此总结出完全无关的内容；
+     * - 匹配顺序 精确 → 前缀 → 包含，避免「第1章」命中「第10章 归来」。
+     */
     private fun resolveChapter(
         book: Book,
         chapters: List<BookChapter>,
         chapterTitle: String?
     ): BookChapter? {
-        if (chapterTitle != null) {
-            chapters.firstOrNull { it.title.contains(chapterTitle) }
-                ?.let { return it }
+        val key = chapterTitle?.trim()
+        if (!key.isNullOrBlank()) {
+            return chapters.firstOrNull { it.title.trim() == key }
+                ?: chapters.firstOrNull { it.title.trim().startsWith(key) }
+                ?: chapters.firstOrNull { it.title.contains(key) }
         }
         return chapters.getOrNull(book.durChapterIndex) ?: chapters.firstOrNull()
     }
@@ -241,6 +257,28 @@ class DefaultBookSourceAnalyzer : BookSourceAnalyzer {
                 "name" to name, "enabled" to source.enabled,
                 "latencyMs" to (System.currentTimeMillis() - start),
                 "message" to "请求超时（>15 秒）"
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: java.net.UnknownHostException) {
+            // 审计修复：域名解析失败是「真不可达」，原先一律报「网络可达但搜索失败」，
+            // 会把模型引向「规则坏了去改 searchUrl」的错误方向
+            mapOf(
+                "url" to url, "status" to "error", "reachable" to false,
+                "name" to name, "enabled" to source.enabled,
+                "message" to ("域名无法解析（网络或书源地址失效）: " + (e.localizedMessage ?: "unknown"))
+            )
+        } catch (e: java.net.ConnectException) {
+            mapOf(
+                "url" to url, "status" to "error", "reachable" to false,
+                "name" to name, "enabled" to source.enabled,
+                "message" to ("连接被拒绝（服务端不可用）: " + (e.localizedMessage ?: "unknown"))
+            )
+        } catch (e: java.net.NoRouteToHostException) {
+            mapOf(
+                "url" to url, "status" to "error", "reachable" to false,
+                "name" to name, "enabled" to source.enabled,
+                "message" to ("网络不可达: " + (e.localizedMessage ?: "unknown"))
             )
         } catch (e: Exception) {
             mapOf(

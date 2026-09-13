@@ -73,17 +73,26 @@ class ConversationService(
         else -> "user"
     }
 
+    /**
+     * 超长裁剪（审计修复）。
+     * 原实现可能把「最新一条」也裁掉：当单条消息自身 cost > [maxChars]（用户粘贴长文、
+     * 长篇总结、大工具结果）时，循环第一次就 break 并把 until 设为最新 seq，
+     * 而 trimUntil 是 seq <= until → 整个会话（含刚写入的那条）被清空。
+     * 现在恒定保留最新一条。
+     */
     private suspend fun trimIfNeeded(sid: Long) {
         val all = messageDao.all(sid)
+        if (all.size <= 1) return
         var sum = all.sumOf { cost(it) }
         if (sum <= maxChars) return
         var until = 0
-        for (m in all) {
-            sum -= cost(m)
-            until = m.seq
+        // 不遍历最后一条：它必须保留
+        for (i in 0 until all.lastIndex) {
+            sum -= cost(all[i])
+            until = all[i].seq
             if (sum <= maxChars) break
         }
-        messageDao.trimUntil(sid, until)
+        if (until > 0) messageDao.trimUntil(sid, until)
     }
 
     private fun cost(m: AiMessage): Int = m.content.length + (m.payload?.length ?: 0)

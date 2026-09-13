@@ -7,6 +7,7 @@ import android.widget.ArrayAdapter
 import androidx.lifecycle.lifecycleScope
 import io.legado.app.R
 import io.legado.app.ai.ModelManager
+import io.legado.app.ai.log.AiLog
 import io.legado.app.ai.model.AiProviderPresets
 import io.legado.app.ai.model.ProviderPreset
 import io.legado.app.ai.runtime.AiKeyStore
@@ -129,8 +130,16 @@ class AiSetupWizardActivity : BaseActivity<ActivityAiSetupBinding>() {
             return
         }
         binding.tvFetchStatus.text = "正在获取模型列表…"
+        // 记录发起时的服务商：用户可能在等待期间返回上一步改选服务商
+        val requestedProvider = provider?.id
         lifecycleScope.launch {
             val res = withContext(Dispatchers.IO) { ModelManager.fetchModels(baseUrl, key) }
+            // 审计修复：过期响应直接丢弃——否则会把用户从当前操作页强行弹到「选模型」，
+            // 且 models 是旧 baseUrl/key 的结果，选中后写进 aiModel 会导致「模型不存在」
+            if (provider?.id != requestedProvider || step != 2) {
+                AiLog.i("Wizard", "忽略过期的模型列表响应 provider=$requestedProvider step=$step")
+                return@launch
+            }
             res.fold(
                 onSuccess = { list ->
                     models.clear()

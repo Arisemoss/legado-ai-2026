@@ -262,18 +262,14 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
                 delay(if (partial != null) 90L else 150L)
             }
         }
+        // 导航改为队列消费：原 StateFlow 单槽在同一轮多个导航调用时会互相覆盖
         uiJobs += lifecycleScope.launch {
-            while (isActive) {
-                val nav = vm.navigation.value
-                if (nav != null) {
-                    vm.navigation.value = null
-                    when (nav) {
-                        is AppNav.OpenBook -> openReader(nav)
-                        is AppNav.GlobalSearch -> openSearch(nav)
-                        AppNav.ToBookshelf -> openBookshelf()
-                    }
+            vm.navigation.collect { nav ->
+                when (nav) {
+                    is AppNav.OpenBook -> openReader(nav)
+                    is AppNav.GlobalSearch -> openSearch(nav)
+                    AppNav.ToBookshelf -> openBookshelf()
                 }
-                delay(150)
             }
         }
     }
@@ -405,7 +401,11 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
                     AlertDialog.Builder(this@AgentHubActivity)
                         .setMessage("确定删除会话「${s.title}」吗？")
                         .setPositiveButton("删除") { _, _ ->
-                            uiJobs += lifecycleScope.launch { runCatching { vm.deleteSession(s.id) } }
+                            uiJobs += lifecycleScope.launch {
+                                runCatching { vm.deleteSession(s.id) }
+                                // 列表已变化，必须重绑：否则行文案与点击下标错位（点 A 会切到 B）
+                                (listView.adapter as? BaseAdapter)?.notifyDataSetChanged()
+                            }
                             toast("会话已删除")
                         }
                         .setNegativeButton("取消", null)
@@ -419,7 +419,10 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
             .setTitle("会话记录")
             .setView(dialogView)
             .setPositiveButton("＋ 新建") { _, _ ->
-                uiJobs += lifecycleScope.launch { runCatching { vm.newSession() } }
+                uiJobs += lifecycleScope.launch {
+                    runCatching { vm.newSession() }
+                    (listView.adapter as? BaseAdapter)?.notifyDataSetChanged()
+                }
             }
             .setNeutralButton("清空当前消息") { _, _ ->
                 AlertDialog.Builder(this)
@@ -651,16 +654,19 @@ class AgentHubActivity : BaseActivity<ActivityAgentHubBinding>() {
                     b.tvDecided.setTextColor(color(R.color.ai_error_text))
                 }
             }
+            // 按行 key 定位而不是 position：列表在流式输出/工具卡插入后会整体位移，
+            // 用 position 有可能点到另一张确认卡（写操作确认必须精确到 token）
+            val rowKey = c.key
             b.btnApprove.setOnClickListener {
-                val row = list.getOrNull(position)
-                if (row is ChatRow.Confirm && row.decided == null) {
+                val row = list.firstOrNull { it.key == rowKey } as? ChatRow.Confirm
+                if (row != null && row.decided == null) {
                     vm.approve(row.token, true)
                     toast("已同意，正在执行写操作")
                 }
             }
             b.btnDeny.setOnClickListener {
-                val row = list.getOrNull(position)
-                if (row is ChatRow.Confirm && row.decided == null) vm.approve(row.token, false)
+                val row = list.firstOrNull { it.key == rowKey } as? ChatRow.Confirm
+                if (row != null && row.decided == null) vm.approve(row.token, false)
             }
         }
 

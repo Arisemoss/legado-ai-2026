@@ -336,7 +336,10 @@ class DefaultAppController : AppController {
             var exists = 0
             var failed = 0
             val names = ArrayList<String>()
-            books.take(20).forEach { b ->
+            // 审计修复：原实现 take(20) 静默丢弃多余条目却仍返回 ok=true，
+            // 现在只做防御性上限（200）并把被截断的数量显式回报
+            val capped = books.take(200)
+            capped.forEach { b ->
                 val r = addToShelf(b)
                 when {
                     r["ok"] != true -> failed++
@@ -349,7 +352,8 @@ class DefaultAppController : AppController {
                 "added" to ok,
                 "exists" to exists,
                 "failed" to failed,
-                "addedNames" to names
+                "addedNames" to names,
+                "skipped" to (books.size - capped.size)
             )
         }
 
@@ -368,7 +372,10 @@ class DefaultAppController : AppController {
                 return@withContext mapOf("ok" to false, "message" to "解析失败（需为替换规则 JSON 数组）")
             }
             if (rules.isEmpty()) return@withContext mapOf("ok" to false, "message" to "未解析到规则")
-            appDb.replaceRuleDao.insert(*rules.toTypedArray())
+            // 审计修复：ReplaceRuleDao.insert 是 OnConflictStrategy.REPLACE，
+            // 外部 JSON 若带 id 会直接覆盖本地同 id 规则（静默改掉用户规则）→ 导入一律作为新规则插入
+            val sanitized = rules.map { it.copy(id = 0) }
+            appDb.replaceRuleDao.insert(*sanitized.toTypedArray())
             ContentProcessor.upReplaceRules()
             mapOf("ok" to true, "imported" to rules.size)
         }

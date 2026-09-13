@@ -146,3 +146,35 @@
 - 验收：commit `eca3d3f87c` → AI Port Build [run 34749930682](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34749930682) ai/app 双 job 全绿。
 - 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。
+
+## 第十二批功能（AI 层第二轮自查 + 三组专项审查，2026-09）
+方法：先冻结提交（审查期间不改仓库），三个子代理分别逐行审「工具层 / 桥接层 / UI+运行时胶水」，我同时自查运行时内核；所有结论都回到代码逐条核实后再修。共修 **18 处**（含 1 处数据丢失级）。
+
+### 数据丢失 / 写操作正确性
+1. **会话历史被整体清空（P1）**：ConversationService.trimIfNeeded 在「单条消息自身超过 maxChars(12k)」时会把 until 设为最新一条 seq，而 trimUntil 是 seq <= until → 连刚写入的消息一起删。改为恒定保留最新一条。
+2. **确认卡可能点到另一张卡**：确认卡的同意/拒绝用 position 定位行，而列表在流式输出/工具卡插入后会位移（同类行可能都是 Confirm）→ 改为按行 key 定位，写操作确认精确到 token。
+3. **批量加书架静默丢数据**：addToShelfBatch 原 take(20) 丢弃多余条目却仍返回 ok=true；改为防御性上限 200 + 回报 skipped。
+4. **导入替换规则会覆盖用户既有规则**：ReplaceRuleDao.insert 是 OnConflictStrategy.REPLACE，外部 JSON 带 id 会直接覆盖本地同 id 规则 → 导入时 copy(id = 0) 作为新规则插入。
+
+### 工具层
+5. **batch_add_to_shelf 的 bookUrl 过滤恒为真**：对 Kotlin null 调 toString() 得到字符串 "null"（非空白）→ 缺 bookUrl 的条目照样进提案、确认后逐条失败；改为 it["bookUrl"]?.toString()?.isNotBlank() == true。
+6. **同一轮多个导航互相覆盖**：onNavigate 是 StateFlow 单槽，open_book + open_search 同轮并行时只有最后一个生效，但每个工具都回报成功 → 改为 MutableSharedFlow(8) 队列语义，消费端改 collect。
+7. **open_book 错误 JSON 未转义**：书名含引号时产生非法 JSON（全库唯一一处）→ 改 Gson 序列化。
+8. **list_shelf 把「关键词无匹配」报成「书架为空」** → 区分两种空并回 books:[] + message。
+9. **set_source_enabled 布尔兜底方向相反**：JSON 数字 0 落到默认值 true → 「要禁用却启用」；boolArg 补 is Number 分支、兜底改 false。
+10. **set_setting 描述与实际白名单不一致**（只写 3 个键，实际 11 个）→ 描述以 list_settings 为准并列出键名。
+
+### 桥接层
+11. **章节定位静默回退**：指定章节名匹配不到时回退到「当前阅读章节」并把第 1 章正文当目标章上报；contains 还会让「第1章」命中「第10章」→ 改为 精确→前缀→包含，匹配失败返回 null。
+12. **协程取消被吞**（搜索单源 / 正文抓取 / 连通性测试 3 处）：用户停止被谎报成「搜到 0 条」「正文获取失败」→ 补 catch (CancellationException) { throw }。
+13. **连通性测试 reachable 恒 true**：DNS 失败/连接被拒也报「网络可达但搜索失败」，把模型引向「改书源规则」→ 按异常类型区分。
+14. **书源规则写入「假成功」**：拼错/不存在子字段被 Gson 静默丢弃但仍计 applied 并报成功 → 合并后无实际变化则返回失败。
+15. **服务商反查不容错**：baseUrl 多一个尾斜杠就被当成「自定义接口」→ 归一化比较。
+
+### UI
+16. **会话管理弹窗列表不刷新**：删除中间会话后行文案与点击下标错位（点「会话B」切到别的会话）→ 删除/新建后重绑适配器。
+17. **向导的模型列表回调无 context 校验**：等待期间返回上一步改服务商，过期响应仍会把页面弹到「选模型」并采用旧列表 → 回调校验 provider/step。
+18. **「复制日志」把空态占位符当日志** → 改用真实渲染内容 lastText 判空。
+
+### 新增单测
+- ai/tool/impl/ToolArgParsingTest：boolArg 数字/字符串/兜底方向 + 服务商反查归一化（4 例）。

@@ -43,7 +43,15 @@ class ToolContext(
         extraBufferCapacity = 64,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     ),
-    val onNavigate: MutableStateFlow<io.legado.app.ai.bridge.AppNav?> = MutableStateFlow(null),
+    /**
+     * 导航请求。原为 StateFlow 单槽：同一轮并行调用多个导航工具（open_book + open_search 等）
+     * 会互相覆盖，且每个工具都回报成功 → 模型宣称「都打开了」。改为队列语义。
+     */
+    val onNavigate: MutableSharedFlow<io.legado.app.ai.bridge.AppNav> = MutableSharedFlow(
+        replay = 0,
+        extraBufferCapacity = 8,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    ),
     /** 流式输出的累积增量文本；null 表示当前没有进行中的流式回答 */
     val onPartialText: MutableStateFlow<String?> = MutableStateFlow(null)
 ) {

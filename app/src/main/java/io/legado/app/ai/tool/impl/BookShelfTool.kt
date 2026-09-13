@@ -23,8 +23,23 @@ class ListShelfTool(private val bridge: AiBridge) : ToolDefinition {
     override val manualConfirm = false
 
     override suspend fun execute(ctx: ToolContext, args: Map<String, Any?>): ToolResult {
-        val shelf = bridge.appController.listShelf(args["keyword"]?.toString())
-        if (shelf.isEmpty()) return ToolResult(text = """{"error":"书架为空"}""")
+        val keyword = args["keyword"]?.toString()?.takeIf { it.isNotBlank() }
+        val shelf = bridge.appController.listShelf(keyword)
+        if (shelf.isEmpty()) {
+            // 区分两种空：书架真的空 vs 关键词无匹配（后者报「书架为空」会误导模型）
+            return if (keyword == null) {
+                ToolResult(text = """{"error":"书架为空"}""")
+            } else {
+                ToolResult(
+                    text = Gson().toJson(
+                        mapOf(
+                            "books" to emptyList<Any>(),
+                            "message" to "书架中没有匹配「${keyword}」的书籍"
+                        )
+                    )
+                )
+            }
+        }
         return ToolResult(text = Gson().toJson(mapOf("books" to shelf)))
     }
 }
@@ -47,9 +62,11 @@ class OpenBookTool(private val bridge: AiBridge) : ToolDefinition {
         val hit = bridge.appController.locateBook(name)
         val bookUrl = hit["bookUrl"]?.toString()
         if (bookUrl.isNullOrBlank()) {
-            return ToolResult(text = """{"error":"《$name》未加入书架，无法打开"}""")
+            return ToolResult(
+                text = Gson().toJson(mapOf("error" to "《${name}》未加入书架，无法打开"))
+            )
         }
-        ctx.onNavigate.value = AppNav.OpenBook(bookUrl, name)
+        ctx.onNavigate.tryEmit(AppNav.OpenBook(bookUrl, name))
         return ToolResult(
             text = Gson().toJson(mapOf("opened" to true, "book" to name, "toReader" to true))
         )

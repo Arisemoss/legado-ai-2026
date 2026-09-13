@@ -10,10 +10,19 @@ import io.legado.app.ai.model.ToolResult
 import io.legado.app.ai.model.ToolResultState
 import io.legado.app.ai.tool.ToolContext
 
-/** 布尔参数兜底解析：模型可能传 Boolean、"true"/"True"/"1" 等多种形态 */
+/**
+ * 布尔参数兜底解析：模型可能传 Boolean、"true"/"1"/"yes"，也可能传数字 0/1。
+ * 注意：数字必须在 else 之前处理——否则 "enabled": 0 会落到默认值，
+ * 出现「要禁用书源却启用了」的反向写入。
+ */
 internal fun boolArg(v: Any?, def: Boolean): Boolean = when (v) {
     is Boolean -> v
-    is String -> v.trim().equals("true", ignoreCase = true) || v.trim() == "1"
+    is Number -> v.toDouble() != 0.0
+    is String -> when (v.trim().lowercase()) {
+        "true", "1", "yes", "on" -> true
+        "false", "0", "no", "off", "" -> false
+        else -> def
+    }
     else -> def
 }
 
@@ -34,7 +43,8 @@ class SetSourceEnabledTool(private val bridge: AiBridge) : ToolDefinition {
 
     override suspend fun execute(ctx: ToolContext, args: Map<String, Any?>): ToolResult {
         val url = args["url"]?.toString() ?: return ToolResult(text = """{"error":"缺少书源URL"}""")
-        val enabled = boolArg(args["enabled"], true)
+        // 兜底方向取 false：宁可少启用，也不要在参数无法解析时把用户想禁用的源打开
+        val enabled = boolArg(args["enabled"], def = false)
         return ToolResult(
             text = Gson().toJson(
                 mapOf("status" to "pending_confirm", "proposal" to mapOf("url" to url, "enabled" to enabled))
@@ -45,7 +55,7 @@ class SetSourceEnabledTool(private val bridge: AiBridge) : ToolDefinition {
 
     override suspend fun onApproved(ctx: ToolContext, args: Map<String, Any?>): ToolResult {
         val url = args["url"]?.toString() ?: return ToolResult(text = """{"error":"缺少书源URL"}""")
-        val enabled = boolArg(args["enabled"], true)
+        val enabled = boolArg(args["enabled"], def = false)
         return ToolResult(text = Gson().toJson(bridge.appController.enableSource(url, enabled)))
     }
 }
@@ -71,7 +81,8 @@ class SetSettingTool(private val bridge: AiBridge) : ToolDefinition {
     override val id = "set_setting"
     override val info = ToolDefinitionInfo(
         name = "set_setting",
-        description = "修改 App 受控设置项；支持 nightTheme(布尔)、threadCount(1..32)、showRss(布尔)",
+        description = "修改 App 受控设置项；键名与取值以 list_settings 返回为准（nightTheme/eInk/showRss/showUnread 为布尔，" +
+            "threadCount 1..32、themeMode 0..3、chineseConverterType 0..2、ttsSpeechRate、bookshelfLayout、bookGroupStyle、recordLog、readUrlInBrowser）",
         parameters = listOf(
             ToolParam("key", "string", "设置项键名", required = true),
             ToolParam("value", "string", "设置值（字符串形式）", required = true)
@@ -114,7 +125,7 @@ class OpenSearchTool(private val bridge: AiBridge) : ToolDefinition {
     override suspend fun execute(ctx: ToolContext, args: Map<String, Any?>): ToolResult {
         val kw = args["keyword"]?.toString()?.takeIf { it.isNotBlank() }
             ?: return ToolResult(text = """{"error":"缺少关键词"}""")
-        ctx.onNavigate.value = AppNav.GlobalSearch(kw)
+        ctx.onNavigate.tryEmit(AppNav.GlobalSearch(kw))
         return ToolResult(text = Gson().toJson(mapOf("opened" to true, "keyword" to kw)))
     }
 }
@@ -132,7 +143,7 @@ class ShowBookshelfTool(private val bridge: AiBridge) : ToolDefinition {
     override val manualConfirm = false
 
     override suspend fun execute(ctx: ToolContext, args: Map<String, Any?>): ToolResult {
-        ctx.onNavigate.value = AppNav.ToBookshelf
+        ctx.onNavigate.tryEmit(AppNav.ToBookshelf)
         return ToolResult(text = Gson().toJson(mapOf("opened" to true, "view" to "bookshelf")))
     }
 }

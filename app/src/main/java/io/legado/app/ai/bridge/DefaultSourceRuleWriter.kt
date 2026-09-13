@@ -71,6 +71,12 @@ class DefaultSourceRuleWriter : SourceRuleWriter {
                 val merged = gson.fromJson(root, BookSource::class.java)
                 // 书源 URL 是主键锚点，合并后强制保持不变
                 merged.bookSourceUrl = source.bookSourceUrl
+                // 审计修复：拼错/不存在的子字段会被 Gson 静默丢弃（addProperty 仍写进了 JSON），
+                // 若序列化结果与原件完全一致说明什么都没改 → 必须返回失败，不能报「已应用 N 项」
+                if (gson.toJson(merged) == gson.toJson(source)) {
+                    AiLog.w("SourceWriter", "变更未生效（字段名可能不存在）: ${changes.keys}")
+                    return@withContext false
+                }
                 dao.update(merged)
                 AiLog.i("SourceWriter", "已应用 ${applied}/${changes.size} 项变更到 $url")
                 true

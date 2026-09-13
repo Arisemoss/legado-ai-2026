@@ -121,9 +121,14 @@ object AiProviderPresets {
 
     fun byId(id: String?): ProviderPreset? = all.find { it.id == id }
 
-    /** 按 Base URL 反查预设（用于状态栏显示当前服务商名） */
-    fun byBaseUrl(url: String?): ProviderPreset? =
-        url?.let { u -> all.find { it.baseUrl.equals(u, ignoreCase = true) } }
+    /**
+     * 按 Base URL 反查预设（用于状态栏显示服务商名 / 判断是否需要 Key）。
+     * 归一化比较：忽略大小写、首尾空格与结尾斜杠——用户手改过的地址（多一个 /）不该被当成「自定义接口」。
+     */
+    fun byBaseUrl(url: String?): ProviderPreset? {
+        val key = url?.trim()?.trimEnd('/')?.lowercase() ?: return null
+        return all.find { it.baseUrl.trim().trimEnd('/').lowercase() == key }
+    }
 
     /** 默认选中：优先 DeepSeek */
     val default: ProviderPreset get() = byId("deepseek") ?: all.first()

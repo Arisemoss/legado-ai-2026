@@ -46,7 +46,9 @@ class BatchAddToShelfTool(private val bridge: AiBridge) : ToolDefinition {
     }
 
     override suspend fun execute(ctx: ToolContext, args: Map<String, Any?>): ToolResult {
-        val books = parse(args)?.filter { !it["bookUrl"].toString().isNullOrBlank() }
+        // 注意：map 缺失字段的值是 Kotlin null，null.toString() == "null"（非空白），
+        // 原来的 !toString().isNullOrBlank() 过滤恒为 true，等于没过滤
+        val books = parse(args)?.filter { it["bookUrl"]?.toString()?.isNotBlank() == true }
         if (books.isNullOrEmpty()) {
             return ToolResult(text = Gson().toJson(mapOf("error" to "booksJson 为空或格式不正确")))
         }
@@ -65,7 +67,8 @@ class BatchAddToShelfTool(private val bridge: AiBridge) : ToolDefinition {
     }
 
     override suspend fun onApproved(ctx: ToolContext, args: Map<String, Any?>): ToolResult {
-        val books = parse(args) ?: return ToolResult(text = Gson().toJson(mapOf("error" to "booksJson 解析失败")))
+        val books = parse(args)?.filter { it["bookUrl"]?.toString()?.isNotBlank() == true }
+            ?: return ToolResult(text = Gson().toJson(mapOf("error" to "booksJson 解析失败")))
         return ToolResult(text = Gson().toJson(bridge.appController.addToShelfBatch(books)))
     }
 }

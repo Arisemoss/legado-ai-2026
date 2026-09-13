@@ -78,6 +78,12 @@ class AiLogActivity : BaseActivity<ActivityAiLogBinding>() {
     }
 
     private fun copyLog() {
+        // 审计修复：空态占位符「暂无日志」不满足 isBlank()，原实现会把它当正文复制进剪贴板；
+        // 用 lastText（真实渲染内容）判空
+        if (lastText.isNullOrBlank()) {
+            showToast("暂无日志")
+            return
+        }
         val text = binding.tvLog.text?.toString().orEmpty()
         if (text.isBlank()) {
             showToast("暂无日志")
