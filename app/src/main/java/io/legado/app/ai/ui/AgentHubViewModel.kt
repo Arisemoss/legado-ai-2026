@@ -23,6 +23,7 @@ import io.legado.app.utils.getPrefString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -119,7 +120,8 @@ class AgentHubViewModel(
     private var turns = ArrayList<Pair<String, String>>()
     private var rowSeq = 0L
     private var currentTitle = "新会话"
-    private var pendingConfirmToken: String? = null
+    /** 已展示过的确认 token（支持多张确认卡并存；审计 A-4） */
+    private val pendingConfirms = java.util.Collections.synchronizedSet(HashSet<String>())
 
     private val timeFmt = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
 
@@ -144,8 +146,7 @@ class AgentHubViewModel(
                 appendAssistantResult(sessionId, prompt, result)
             }
             scope?.launch { refreshSessions() }
-            ctx.onConfirmRequested.value = null
-            pendingConfirmToken = null
+            pendingConfirms.clear()
         }
     }
 
@@ -166,14 +167,14 @@ class AgentHubViewModel(
                 ctx.onToolEvent.value = null
             }
         }
+        // 审计 A-4：确认请求改为 SharedFlow 队列消费（原 StateFlow 单槽 + 120ms 轮询会覆盖丢卡）
         vmJobs += scope.launch {
-            while (isActive) {
-                val req = ctx.onConfirmRequested.value
-                if (req != null && req.confirmToken != pendingConfirmToken) {
-                    pendingConfirmToken = req.confirmToken
-                    appendRow(ChatRow.Confirm(confirmKey(req), req.confirmToken, renderProposal(req), null))
+            ctx.onConfirmRequested.collect { req ->
+                if (pendingConfirms.add(req.confirmToken)) {
+                    appendRow(
+                        ChatRow.Confirm(confirmKey(req), req.confirmToken, renderProposal(req), null)
+                    )
                 }
-                kotlinx.coroutines.delay(120)
             }
         }
     }
@@ -241,10 +242,9 @@ class AgentHubViewModel(
         sessionId.value = sid
         ctx.sessionId = sid
         ctx.stopRequested.value = false
-        ctx.onConfirmRequested.value = null
         ctx.onToolEvent.value = null
         ctx.onPartialText.value = null
-        pendingConfirmToken = null
+        pendingConfirms.clear()
         currentTitle = sessions.value.find { it.id == sid }?.title ?: "新会话"
 
         val loaded = conversation.loadChat(sid)
@@ -308,7 +308,13 @@ class AgentHubViewModel(
         when (result.state) {
             AgentResultState.STOPPED -> appendRow(ChatRow.ErrorRow(nextKey(), "⏹ 已手动停止本轮回答"))
             AgentResultState.BUDGET_EXCEEDED ->
-                appendRow(ChatRow.ErrorRow(nextKey(), "⚠️ 达到预算上限（轮数/token），回答被截断。可在设置中调大最大轮数"))
+                appendRow(
+                    ChatRow.ErrorRow(
+                        nextKey(),
+                        "⚠️ 本轮累计 token 超过「单轮 token 预算」，回答已截断。" +
+                            "可在「AI 设置 → 高级」调大预算，或把问题拆小"
+                    )
+                )
             AgentResultState.ERROR ->
                 appendRow(ChatRow.ErrorRow(nextKey(), result.answer))
             AgentResultState.DONE -> Unit
@@ -326,8 +332,7 @@ class AgentHubViewModel(
         messages.value = messages.value.map {
             if (it is ChatRow.Confirm && it.token == token) it.copy(decided = approved) else it
         }
-        ctx.onConfirmRequested.value = null
-        pendingConfirmToken = null
+        pendingConfirms.remove(token)
     }
 
     private fun ensureIdle() {

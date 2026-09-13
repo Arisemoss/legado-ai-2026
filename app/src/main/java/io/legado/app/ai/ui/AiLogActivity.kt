@@ -47,7 +47,7 @@ class AiLogActivity : BaseActivity<ActivityAiLogBinding>() {
         binding.topBar.setSubtitle("模型请求 / 流式 / 工具 / 错误全链路")
         binding.topBar.addAction(R.drawable.ic_clear_all, "清空日志") { confirmClear() }
         binding.topBar.addAction(R.drawable.ic_copy, "复制日志") { copyLog() }
-        binding.topBar.addAction(R.drawable.ic_share, "分享完整日志文件") { shareFullFile() }
+        binding.topBar.addAction(R.drawable.ic_share, "分享完整日志文件") { confirmShare() }
 
         // 实时刷新（1s 轮询内存缓冲；内容未变化时不重设文本，保持可选中/滚动位置）
         jobs += lifecycleScope.launch {
@@ -125,6 +125,19 @@ class AiLogActivity : BaseActivity<ActivityAiLogBinding>() {
         lastText = text
         binding.tvLog.text = sb
         if (atBottom) binding.svLog.post { binding.svLog.fullScroll(View.FOCUS_DOWN) }
+    }
+
+    /** 分享前警示：日志含对话内容/工具参数/错误详情，避免用户以为是无害操作（审计 A-2） */
+    private fun confirmShare() {
+        AlertDialog.Builder(this)
+            .setTitle("分享完整日志？")
+            .setMessage(
+                "日志包含：与 AI 的对话内容、工具调用参数、服务地址与错误详情。" +
+                    "\nAPI Key 等凭据已做兜底脱敏，但对话内容不会脱敏——请确认接收方可信。"
+            )
+            .setPositiveButton("继续分享") { _, _ -> shareFullFile() }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     /** 分享完整日志文件内容（截取尾部，规避 Binder 1MB 限制） */

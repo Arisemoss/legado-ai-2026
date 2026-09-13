@@ -23,7 +23,8 @@ import java.net.URLDecoder
  */
 object BookSourceHub {
 
-    const val DEFAULT_PAGE = "http://yuedu.miaogongzi.net/gx.html"
+    /** 审计 M-2：默认页由明文 HTTP 改为 HTTPS（2026-09 实测 https 返回 200），避免聚合页被劫持注入书源 */
+    const val DEFAULT_PAGE = "https://yuedu.miaogongzi.net/gx.html"
 
     data class Entry(val title: String, val src: String)
 
@@ -117,12 +118,29 @@ object BookSourceHub {
     suspend fun downloadText(src: String): String =
         withContext(Dispatchers.IO) { downloadTextBlocking(src) }
 
-    /** 阻塞式下载：调用方必须已处于 IO 线程 */
+    /**
+     * 阻塞式下载：调用方必须已处于 IO 线程。
+     * 审计 A-6 同伴加固：仅 http/https + 2MB 流式上限（书源 JSON 通常远小于此）。
+     */
     private fun downloadTextBlocking(src: String): String {
+        val maxBytes = 2L * 1024 * 1024
+        val scheme = runCatching { java.net.URI(src).scheme?.lowercase() }.getOrNull()
+        require(scheme == "http" || scheme == "https") { "仅支持 http/https 地址" }
         val req = Request.Builder().url(src).get().build()
         return okHttpClient.newCall(req).execute().use { resp ->
             if (!resp.isSuccessful) throw RuntimeException("HTTP ${resp.code}")
-            resp.body?.string().orEmpty()
+            val body = resp.body ?: throw RuntimeException("空响应")
+            if (body.contentLength() > maxBytes) throw RuntimeException("内容过大（>${maxBytes / 1024}KB）")
+            val source = body.source()
+            val buf = okio.Buffer()
+            var total = 0L
+            while (true) {
+                val read = source.read(buf, 8192L)
+                if (read == -1L) break
+                total += read
+                if (total > maxBytes) throw RuntimeException("内容超过上限（>${maxBytes / 1024}KB）")
+            }
+            buf.readUtf8()
         }
     }
 

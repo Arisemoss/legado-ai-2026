@@ -69,7 +69,8 @@ class DefaultBookFetcher : BookFetcher {
                 }.awaitAll()
             }
             val result = found.flatten()
-                .filter { seen.add(it.name) }   // 按书源优先级去重
+                // 审计 M-5：按「书名+来源」去重——只按书名会误杀同名不同源的书
+                .filter { seen.add(it.name + "|" + it.origin) }
                 .take(limit)
                 .map { book ->
                     // 字段必须齐全：add_book_to_shelf 需要 bookUrl/origin/originName/tocUrl 等，

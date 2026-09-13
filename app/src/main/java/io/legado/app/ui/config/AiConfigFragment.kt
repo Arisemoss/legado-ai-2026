@@ -289,9 +289,13 @@ class AiConfigFragment : PreferenceFragment() {
             ctx.getPrefString(PreferKey.aiBaseUrl) ?: "—"
         findPreference<Preference>(PreferKey.aiModel)?.summary =
             ctx.getPrefString(PreferKey.aiModel) ?: "—"
-        val keyText = AiKeyStore.getApiKey().orEmpty()
-        findPreference<Preference>(PreferKey.aiApiKey)?.summary =
-            if (keyText.isBlank()) "未设置（必填）" else "已加密保存 (${keyText.take(4)}…${keyText.takeLast(4)})"
+        // 审计 A-1/A-5：不展示 Key 的任何字符（尾 4 位是真实熵），只显示状态与真实存储方式；
+        // 同时避免 getApiKey() 把明文载入 UI 层。
+        findPreference<Preference>(PreferKey.aiApiKey)?.summary = when (AiKeyStore.storageMode()) {
+            AiKeyStore.StorageMode.ENCRYPTED -> "已配置 · Android Keystore 加密存储"
+            AiKeyStore.StorageMode.PLAINTEXT -> "⚠️ 已配置，但本机 Keystore 不可用，当前为明文存储"
+            AiKeyStore.StorageMode.NONE -> "未设置（必填）"
+        }
     }
 
     private fun toast(msg: String) {

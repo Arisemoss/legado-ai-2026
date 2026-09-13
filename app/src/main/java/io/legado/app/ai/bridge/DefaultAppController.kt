@@ -393,11 +393,36 @@ class DefaultAppController : AppController {
 
     private fun ok(key: String): Map<String, Any> =
         mapOf("ok" to true, "key" to key, "message" to "已恢复默认值")
+    /**
+     * 下载文本（审计 A-6 / M-3 / M-4）。url 来自模型生成的工具参数，按不可信输入处理：
+     * ① 仅允许 http/https（严格 scheme 解析，不用 startsWith 前缀判断）；
+     * ② 独立 client 显式超时（不依赖基座共享 client 的隐式配置）；
+     * ③ 先看 Content-Length，再流式限长读取，上限 2MB，避免 OOM。
+     */
     private fun downloadText(url: String): String {
+        val maxBytes = 2L * 1024 * 1024
+        val scheme = runCatching { java.net.URI(url).scheme?.lowercase() }.getOrNull()
+        require(scheme == "http" || scheme == "https") { "仅支持 http/https 地址" }
+        val client = okHttpClient.newBuilder()
+            .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
         val req = Request.Builder().url(url).get().build()
-        return okHttpClient.newCall(req).execute().use { resp ->
+        return client.newCall(req).execute().use { resp ->
             if (!resp.isSuccessful) throw RuntimeException("HTTP ${resp.code}")
-            resp.body?.string().orEmpty()
+            val body = resp.body ?: throw RuntimeException("空响应")
+            if (body.contentLength() > maxBytes) throw RuntimeException("内容过大（>${maxBytes / 1024}KB）")
+            val source = body.source()
+            val buf = okio.Buffer()
+            var total = 0L
+            while (true) {
+                val read = source.read(buf, 8192L)
+                if (read == -1L) break
+                total += read
+                if (total > maxBytes) throw RuntimeException("内容超过上限（>${maxBytes / 1024}KB）")
+            }
+            buf.readUtf8()
         }
     }
 }

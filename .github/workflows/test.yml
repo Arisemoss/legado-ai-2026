@@ -75,13 +75,25 @@ jobs:
           echo "清空18PlusList.txt"
           echo "">$GITHUB_WORKSPACE/app/src/main/assets/18PlusList.txt
       - name: Release Apk Sign
+        env:
+          STORE_B64: ${{ secrets.RELEASE_KEY_STORE }}
+          STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
-          echo "给apk增加签名"
-          cp $GITHUB_WORKSPACE/.github/workflows/legado.jks $GITHUB_WORKSPACE/app/legado.jks
-          sed '$a\RELEASE_STORE_FILE=./legado.jks'          $GITHUB_WORKSPACE/gradle.properties -i
-          sed '$a\RELEASE_KEY_ALIAS=legado'                 $GITHUB_WORKSPACE/gradle.properties -i
-          sed '$a\RELEASE_STORE_PASSWORD=gedoor_legado'     $GITHUB_WORKSPACE/gradle.properties -i
-          sed '$a\RELEASE_KEY_PASSWORD=gedoor_legado'       $GITHUB_WORKSPACE/gradle.properties -i
+          # 审计 H-1：不再使用仓库内硬编码的 legado.jks 与明文密码（上游密钥已公开、必须视为不可信）。
+          # 未配置 Secrets 时直接跳过签名，产物为未签名包，不影响构建与测试。
+          if [ -z "$STORE_B64" ]; then
+            echo "::warning::未配置 RELEASE_KEY_STORE，跳过 release 签名"
+            exit 0
+          fi
+          echo "$STORE_B64" | base64 --decode > "$GITHUB_WORKSPACE/app/key.jks"
+          {
+            echo "RELEASE_STORE_FILE=./key.jks"
+            echo "RELEASE_KEY_ALIAS=$KEY_ALIAS"
+            echo "RELEASE_STORE_PASSWORD=$STORE_PASSWORD"
+            echo "RELEASE_KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_WORKSPACE/gradle.properties"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4

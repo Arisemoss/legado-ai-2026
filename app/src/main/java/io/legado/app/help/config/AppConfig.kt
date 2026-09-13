@@ -219,6 +219,10 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
     val showDiscovery: Boolean
         get() = appCtx.getPrefBoolean(PreferKey.showDiscovery, true)
 
+    /** 审计 H-4：导出的 readerProvider 是否允许外部 App 访问（默认关闭，防任意应用读写书架/书源） */
+    val allowExternalApi: Boolean
+        get() = appCtx.getPrefBoolean(PreferKey.allowExternalApi, false)
+
     val showRSS: Boolean
         get() = appCtx.getPrefBoolean(PreferKey.showRss, true)
 

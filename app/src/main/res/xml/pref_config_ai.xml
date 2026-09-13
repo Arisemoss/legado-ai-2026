@@ -88,6 +88,13 @@
             app:iconSpaceReserved="false" />
 
         <androidx.preference.EditTextPreference
+            android:key="ai_max_tokens"
+            android:title="单轮 token 预算"
+            android:summary="累计 token 超过即截断（默认 16000；中文长回答可调高）"
+            android:defaultValue="16000"
+            app:iconSpaceReserved="false" />
+
+        <androidx.preference.EditTextPreference
             android:key="ai_session_window"
             android:title="会话消息窗口"
             android:defaultValue="50"

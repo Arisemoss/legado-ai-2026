@@ -1,6 +1,7 @@
 package io.legado.app.ai.runtime
 
 import io.legado.app.data.appDb
+import androidx.room.withTransaction
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import io.legado.app.ai.model.ChatMessage
@@ -42,20 +43,24 @@ class ConversationService(
     suspend fun loadAll(sid: Long): List<AiMessage> = messageDao.all(sid)
 
     suspend fun append(sid: Long, m: ChatMessage) {
-        val seq = (messageDao.maxSeq(sid) ?: -1) + 1
         val kind = inferKind(m)
-        messageDao.insert(
-            AiMessage(
-                sessionId = sid,
-                seq = seq,
-                kind = kind,
-                role = m.role,
-                content = m.content ?: "",
-                payload = m.toolCalls?.let { gson.toJson(it) },
-                toolName = m.toolCalls?.firstOrNull()?.function?.name
+        // 审计 B-4：maxSeq 读 + insert 必须在同一事务内，否则并发追加会产生重复 seq
+        appDb.withTransaction {
+            val seq = (messageDao.maxSeq(sid) ?: -1) + 1
+            messageDao.insert(
+                AiMessage(
+                    sessionId = sid,
+                    seq = seq,
+                    kind = kind,
+                    role = m.role,
+                    content = m.content ?: "",
+                    payload = m.toolCalls?.let { gson.toJson(it) },
+                    toolName = m.toolCalls?.firstOrNull()?.function?.name
+                )
             )
-        )
-        sessionDao.get(sid)?.let { sessionDao.update(it.copy(updatedAt = System.currentTimeMillis())) }
+            sessionDao.get(sid)
+                ?.let { sessionDao.update(it.copy(updatedAt = System.currentTimeMillis())) }
+        }
         trimIfNeeded(sid)
     }
 

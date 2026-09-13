@@ -1,8 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <!--
+      基座：书源站点大量使用明文 HTTP，作为阅读器必须保留全局放行（上游历史设计）。
+      审计 H-2：保留 base-config，但对「AI 服务商域名」单独强制 HTTPS——
+      API Key 与对话内容不允许走明文，即使有人把 baseUrl 手写成 http:// 也会被系统拒绝。
+      本地推理（Ollama/LM Studio 的 127.0.0.1）不在名单内，仍按 base-config 放行。
+    -->
     <base-config
         cleartextTrafficPermitted="true"
         tools:ignore="InsecureBaseConfiguration" />
+
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">api.deepseek.com</domain>
+        <domain includeSubdomains="true">dashscope.aliyuncs.com</domain>
+        <domain includeSubdomains="true">open.bigmodel.cn</domain>
+        <domain includeSubdomains="true">api.moonshot.cn</domain>
+        <domain includeSubdomains="true">api.siliconflow.cn</domain>
+        <domain includeSubdomains="true">api.minimax.chat</domain>
+        <domain includeSubdomains="true">ark.cn-beijing.volces.com</domain>
+        <domain includeSubdomains="true">api.openai.com</domain>
+        <domain includeSubdomains="true">openrouter.ai</domain>
+        <domain includeSubdomains="true">api.groq.com</domain>
+        <domain includeSubdomains="true">api.x.ai</domain>
+    </domain-config>
 
     <debug-overrides cleartextTrafficPermitted="true">
         <trust-anchors>

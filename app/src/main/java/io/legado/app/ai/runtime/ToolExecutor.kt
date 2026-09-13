@@ -95,10 +95,16 @@ class ToolExecutor(
                 )
             } catch (e: Exception) {
                 AiLog.e("Tool", "${def.id} 异常", e)
+                // 审计 B-3：IO/网络类异常才可重试；参数/解析等确定性异常不再空转重试
+                val code = if (e is java.io.IOException) {
+                    AgentErrorCode.NETWORK_UNAVAILABLE
+                } else {
+                    AgentErrorCode.TOOL_FAILED
+                }
                 ToolResult(
                     text = jsonError(def.id, e.localizedMessage ?: "tool error"),
                     state = ToolResultState.OK,
-                    error = AgentError(AgentErrorCode.TOOL_FAILED, "tool error")
+                    error = AgentError(code, "tool error")
                 )
             }
             // 写/确认类工具绝不自动重试；确定性错误不重试

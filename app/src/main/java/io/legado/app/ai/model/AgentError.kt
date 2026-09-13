@@ -6,7 +6,9 @@ package io.legado.app.ai.model
 enum class AgentErrorCode(val retryable: Boolean) {
     RETRYABLE_TIMEOUT(true),
     NETWORK_UNAVAILABLE(true),
-    TOOL_FAILED(true),
+
+    /** 工具确定性失败（参数/目标/解析问题）：重试无意义（审计 B-3） */
+    TOOL_FAILED(false),
     AUTH_FAILED(false),
     BUDGET_EXCEEDED(false),
     NO_PERMISSION(false)

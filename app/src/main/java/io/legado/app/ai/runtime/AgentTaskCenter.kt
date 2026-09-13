@@ -89,7 +89,7 @@ object AgentTaskCenter {
         sharedCtx.sessionId = sessionId
         sharedCtx.preset = preset
         sharedCtx.stopRequested.value = false
-        sharedCtx.onConfirmRequested.value = null
+        // onConfirmRequested 已改为 SharedFlow 队列（审计 A-4），无需也无法在此清空
         sharedCtx.onToolEvent.value = null
         sharedCtx.onPartialText.value = null
 

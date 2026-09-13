@@ -13,6 +13,7 @@ import com.google.gson.Gson
 import io.legado.app.api.controller.BookController
 import io.legado.app.api.controller.BookSourceController
 import io.legado.app.api.controller.RssSourceController
+import io.legado.app.help.config.AppConfig
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -57,11 +58,24 @@ class ReaderProvider : ContentProvider() {
         return false
     }
 
+    /**
+     * 审计 H-4：本 Provider 以 exported=true 暴露给任意第三方 App（见 api.md 的对外 API）。
+     * 默认拒绝，需用户在「我的 → 其他设置 → 允许外部 App 访问数据」显式开启。
+     */
+    private fun requireExternalAccess() {
+        if (!AppConfig.allowExternalApi) {
+            throw SecurityException(
+                "外部访问已关闭：请在 legado「我的 → 其他设置」中开启「允许外部 App 访问数据」"
+            )
+        }
+    }
+
     override fun delete(
         uri: Uri,
         selection: String?,
         selectionArgs: Array<String>?
     ): Int {
+        requireExternalAccess()
         if (sMatcher.match(uri) < 0) return -1
         when (RequestCode.entries[sMatcher.match(uri)]) {
             RequestCode.DeleteBookSources -> BookSourceController.deleteSources(selection)
@@ -76,6 +90,7 @@ class ReaderProvider : ContentProvider() {
     override fun getType(uri: Uri) = throw UnsupportedOperationException("Not yet implemented")
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? {
+        requireExternalAccess()
         if (sMatcher.match(uri) < 0) return null
         runBlocking {
             when (RequestCode.entries[sMatcher.match(uri)]) {
@@ -115,6 +130,7 @@ class ReaderProvider : ContentProvider() {
         uri: Uri, projection: Array<String>?, selection: String?,
         selectionArgs: Array<String>?, sortOrder: String?
     ): Cursor? {
+        requireExternalAccess()
         val map: MutableMap<String, ArrayList<String>> = HashMap()
         uri.getQueryParameter("url")?.let {
             map["url"] = arrayListOf(it)

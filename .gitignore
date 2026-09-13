@@ -16,3 +16,8 @@ package-lock.json
 .idea/
 # Kotlin 2.0
 .kotlin/
+
+# 签名密钥（审计 H-1：绝不入库，走 GitHub Secrets）
+*.jks
+*.keystore
+key.jks

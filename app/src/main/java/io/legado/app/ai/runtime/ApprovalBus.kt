@@ -1,22 +1,23 @@
 package io.legado.app.ai.runtime
 
 import kotlinx.coroutines.delay
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 写操作确认总线。与具体 [AgentRuntime] 实例解耦：
  * 配置热更新会重建 runtime，未决确认经此总线仍可送达当前等待者，不随旧实例失效。
  *
- * 实现：单槽 + 100ms 轮询。coroutines 1.3.x 无 SharedFlow/BroadcastChannel 订阅语义，
- * 而本项目为单任务槽设计（同一时刻至多一个 pending_confirm），单槽轮询足够且最稳。
+ * 实现：token→决策 的并发映射 + 100ms 轮询（审计 A-4：原先单槽会被后到的决策覆盖，
+ * 一旦出现多个待确认调用就会错配/丢确认，因此改为多槽）。
  */
 object ApprovalBus {
 
-    @Volatile
-    private var decision: Pair<String, Boolean>? = null
+    /** 审计 A-4：单槽 → 多槽，消除"新决策覆盖旧决策"的错配风险 */
+    private val decisions = ConcurrentHashMap<String, Boolean>()
 
     /** UI 决策入口：[token] 对应某次 pending_confirm 的 call id */
     fun offer(token: String, approved: Boolean) {
-        decision = token to approved
+        decisions[token] = approved
     }
 
     /**
@@ -31,14 +32,12 @@ object ApprovalBus {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
             if (isStopped()) return null
-            decision?.let { d ->
-                if (d.first == token) {
-                    decision = null // token 一次性消费
-                    return d
-                }
+            decisions.remove(token)?.let { approved -> // token 一次性消费，且只取自己的槽
+                return token to approved
             }
             delay(100)
         }
+        decisions.remove(token) // 超时清理，避免映射无限增长
         return null
     }
 }

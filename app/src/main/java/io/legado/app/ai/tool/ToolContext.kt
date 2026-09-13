@@ -1,6 +1,8 @@
 package io.legado.app.ai.tool
 
 import io.legado.app.ai.model.ToolEvent
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
@@ -23,7 +25,15 @@ data class ConfirmRequest(val confirmToken: String, val proposal: Map<String, An
 class ToolContext(
     var sessionId: Long,
     preset: AiPreset = AiPreset(),
-    val onConfirmRequested: MutableStateFlow<ConfirmRequest?> = MutableStateFlow(null),
+    /**
+     * 写操作确认请求。审计 A-4：由 StateFlow 单槽改为 SharedFlow 队列语义
+     * （replay=0 + 缓冲 8），保证并发/连续到达的确认请求不会互相覆盖丢失。
+     */
+    val onConfirmRequested: MutableSharedFlow<ConfirmRequest> = MutableSharedFlow(
+        replay = 0,
+        extraBufferCapacity = 8,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    ),
     val onNavigate: MutableStateFlow<io.legado.app.ai.bridge.AppNav?> = MutableStateFlow(null),
     val onToolEvent: MutableStateFlow<ToolEvent?> = MutableStateFlow(null),
     /** 流式输出的累积增量文本；null 表示当前没有进行中的流式回答 */

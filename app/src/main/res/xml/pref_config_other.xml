@@ -70,6 +70,12 @@
 
         <io.legado.app.lib.prefs.SwitchPreference
             android:defaultValue="false"
+            android:key="allow_external_api"
+            android:summary="开启后，任意已安装 App 可通过 readerProvider 读取书架与正文、增删书源；默认关闭以防数据被外部应用读写"
+            android:title="允许外部 App 访问数据" />
+
+        <io.legado.app.lib.prefs.SwitchPreference
+            android:defaultValue="false"
             android:key="webServiceWakeLock"
             android:summary="@string/web_service_wake_lock_summary"
             android:title="@string/web_service_wake_lock" />

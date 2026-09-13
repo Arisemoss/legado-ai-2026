@@ -81,5 +81,34 @@
 - **设置页「测试连接」同问题**：`OpenAIClient.complete` 在 `viewLifecycleOwner.lifecycleScope`（主线程）执行，异常被 `runCatching` 吞成「连接失败」。改 `withContext(Dispatchers.IO)`。
 - **向导体验**：选择服务商后自动进入下一步；获取模型失败时回退到预设模型并放行到选模型步；完成时若模型名为空兜底写入服务商首个预设模型。
 - 验收：commit `3e7fb508c6` → AI Port Build [run 34735570518](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34735570518) ai/app 双 job 全绿。
+
+## 第八批功能（两份审计报告修复，2026-09）
+依据《legado-ai-2026 代码审计与全面分析报告》与《AI 层专项深度审计报告》（快照 master @ d37db9b）逐条修复。
+
+### AI 层（P0/P1/P2）
+- **A-1 Key 明文展示**：设置页不再显示 Key 的任何字符（尾 4 位是真实熵），只显示状态；新增 `AiKeyStore.isConfigured()/storageMode()`，`getApiKey()` 不再被 UI 调用。
+- **A-2 日志脱敏**：`AiLog.log()` 内置 `scrub()` 兜底（sk-* / Bearer / api_key=…），把「调用方约定」升级为「机制」；`AiLogActivity` 分享前弹警示（日志含对话内容与工具参数）。
+- **A-3 XML 实体解码**：经核实为**误报**——当前 HEAD 的 `unescapeXml()` 已是 `&lt;`/`&gt;` 正确实现（git 历史中从未出现恒等替换）。仍补了回归测试锁定行为。
+- **A-4 确认单槽覆盖**：`ToolContext.onConfirmRequested` 由 `StateFlow` 单槽改为 `MutableSharedFlow(replay=0, extraBufferCapacity=8)` 队列语义；`ApprovalBus` 单槽改 `ConcurrentHashMap` 多槽；`AgentHubViewModel` 用 token 集合替代单值，支持多张确认卡并存。
+- **A-5 明文回退可见化**：`AiKeyStore.storageMode()` 暴露真实存储方式，设置页在回退明文时显示「⚠️ 当前为明文存储」，不再谎称已加密。
+- **A-6 下载三无**：`DefaultAppController.downloadText()` 与 `BookSourceHub.downloadTextBlocking()` 增加严格 scheme 白名单（仅 http/https）、独立超时 client（10/15/30s）、2MB 流式限长，防 SSRF 与 OOM。
+- **B-1 token 预算**：`AiPlatform` 不再硬编码 16_000，改读配置；新增设置项「单轮 token 预算」（`ai_max_tokens`，默认 16000）；预算耗尽提示改为指向该设置项。
+- **B-2 中文 token 估算**：新增 `estimateTokens()`（CJK 1 token/字，其余 1/4 字符），替代低估约 3 倍的 `len/3`。
+- **B-3 重试分类**：`TOOL_FAILED` 改为不可重试；`ToolExecutor` 仅对 `IOException` 用 `NETWORK_UNAVAILABLE`（可重试），确定性异常不再空转。
+- **B-4 seq 竞态**：`ConversationService.append()` 的 `maxSeq` 读 + `insert` 包进 `appDb.withTransaction {}`。
+
+### 继承自基线的问题
+- **H-1 签名密钥**：`.github/workflows/legado.jks`（上游正式密钥）已从仓库移除，`test.yml` 改用 Secrets（`RELEASE_KEY_STORE` 等，与 `release.yml` 同名）且未配置时跳过签名；`.gitignore` 补 `*.jks`/`*.keystore`/`key.jks`。**注意：密钥仍存在于 git 历史中，删除不足以撤销，需在 GitHub 侧轮换**。
+- **H-2 明文流量**：保留书源所需的全局 `base-config`，但对 11 个 AI 服务商域名新增 `<domain-config cleartextTrafficPermitted="false">`，API Key/对话内容不允许走明文；本地推理（127.0.0.1）不受影响。
+- **H-4 Provider 无鉴权**：`ReaderProvider` 增加访问开关（`allow_external_api`，**默认关闭**），未开启时抛 `SecurityException`；入口在「我的 → 其他设置 → 允许外部 App 访问数据」。这是行为变更：第三方集成需用户显式开启。
+- **M-2**：`BookSourceHub.DEFAULT_PAGE` 改 HTTPS（2026-09 实测 https 返回 200）。
+- **M-3**：`import_replace_rules` 的 URL 导入现受 scheme 白名单与 2MB 上限约束。
+- **M-5**：搜索去重由「仅书名」改为「书名+来源」，避免同名不同源的书被误杀。
+- **M-8**：`ModelManager` 兜底默认值由 OpenAI 改为 DeepSeek（与首启向导默认服务商一致）。
+
+### 新增单测
+- `ai/log/AiLogScrubTest`（5 例，脱敏机制）
+- `TextToolCallParserTest` 增补 `&lt;`/`&gt;` 实体解码回归
+- `ApprovalBusTest` 增补「多 token 互不覆盖」并发用例
 - 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。

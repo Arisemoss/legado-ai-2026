@@ -16,7 +16,8 @@ import java.util.concurrent.Executors
  *
  * - 页面入口：AI 助手顶栏 🐛 → [io.legado.app.ai.ui.AiLogActivity]
  * - 文件位置：filesDir/logs/ai.log（超 512KB 轮转为 ai.log.1）
- * - 敏感信息约定：API Key 等必须经 [mask] 脱敏后再记录
+ * - 敏感信息：调用方仍应主动 [mask]，但 [log] 内置 [scrub] 兜底，
+ *   把常见凭据样式（sk-* / Bearer / api_key=…）替换掉，避免「约定」被漏调即泄露（审计 A-2）
  */
 object AiLog {
 
@@ -62,17 +63,18 @@ object AiLog {
         log(L_E, tag, if (tr == null) msg else "$msg · ${tr.javaClass.simpleName}: ${tr.message}")
 
     private fun log(level: String, tag: String, msg: String) {
-        val entry = Entry(System.currentTimeMillis(), level, tag, msg.take(2000))
+        val safe = scrub(msg)
+        val entry = Entry(System.currentTimeMillis(), level, tag, safe.take(2000))
         synchronized(lock) {
             buffer.addLast(entry)
             while (buffer.size > MAX_MEMORY_ENTRIES) buffer.pollFirst()
         }
         val fullTag = "AI/$tag"
         when (level) {
-            L_D -> Log.d(fullTag, msg)
-            L_W -> Log.w(fullTag, msg)
-            L_E -> Log.e(fullTag, msg)
-            else -> Log.i(fullTag, msg)
+            L_D -> Log.d(fullTag, safe)
+            L_W -> Log.w(fullTag, safe)
+            L_E -> Log.e(fullTag, safe)
+            else -> Log.i(fullTag, safe)
         }
         val f = logFile ?: return
         io.execute {
@@ -93,6 +95,30 @@ object AiLog {
 
     /** 完整文件内容（含历史会话），用于导出 */
     fun fileText(): String = runCatching { logFile?.readText() }.getOrNull().orEmpty()
+
+    /** 常见凭据样式（兜底拦截；调用方的 [mask] 仍是第一道防线） */
+    private val SECRET_PATTERNS = listOf(
+        Regex("""sk-[A-Za-z0-9_\-]{12,}"""),
+        Regex("""(?i)bearer\s+[A-Za-z0-9_\-\.]{12,}"""),
+        Regex("""(?i)(api[_-]?key|access[_-]?token|token|secret|password)["'\s:=]+[A-Za-z0-9_\-\.]{10,}""")
+    )
+
+    /**
+     * 兜底脱敏：命中常见凭据样式时只保留标识前缀（如 api_key= / Bearer），其余打码。
+     * 纯字符串处理、无副作用，可单测（审计 A-2：把脱敏从约定升级为机制）。
+     */
+    fun scrub(text: String): String {
+        var out = text
+        SECRET_PATTERNS.forEach { re ->
+            out = re.replace(out) { m ->
+                val raw = m.value
+                val cut = raw.lastIndexOfAny(charArrayOf('=', ':', ' ', '"', '\''))
+                if (cut in 0 until raw.length - 1) raw.substring(0, cut + 1) + "***"
+                else raw.take(4) + "***"
+            }
+        }
+        return out
+    }
 
     /** 敏感信息脱敏：保留首尾各4字符 */
     fun mask(secret: String?): String {

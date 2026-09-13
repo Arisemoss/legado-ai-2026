@@ -30,6 +30,19 @@ object AiKeyStore {
     // 密文独立存放，避免与明本 key 冲突
     private const val ENC_KEY = "ai_api_key_enc"
 
+    /** Key 的真实存储方式（供 UI 展示，避免「设置页说已加密、实际是明文」的承诺背离） */
+    enum class StorageMode { NONE, ENCRYPTED, PLAINTEXT }
+
+    /** 是否已配置（不把明文带进 UI 层：审计 A-1 要求设置页只显示状态，不显示任何字符） */
+    fun isConfigured(): Boolean = storageMode() != StorageMode.NONE
+
+    fun storageMode(): StorageMode {
+        val enc = appCtx.getPrefString(ENC_KEY).orEmpty()
+        if (enc.isNotBlank() && decrypt(enc) != null) return StorageMode.ENCRYPTED
+        val plain = appCtx.getPrefString(PreferKey.aiApiKey).orEmpty()
+        return if (plain.isNotBlank()) StorageMode.PLAINTEXT else StorageMode.NONE
+    }
+
     fun getApiKey(): String {
         appCtx.getPrefString(ENC_KEY)?.let { enc ->
             if (enc.isNotBlank()) {

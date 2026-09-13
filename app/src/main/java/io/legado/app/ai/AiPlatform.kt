@@ -83,7 +83,8 @@ object AiPlatform {
                 client = client,
                 registry = registry,
                 maxRounds = cfg.maxRounds,
-                maxTokens = 16_000L,
+                // 审计 B-1：原先硬编码 16_000 覆盖类默认 32_000 且设置页不可见，改为读配置
+                maxTokens = cfg.maxTokens.toLong(),
                 // 确认窗口独立于请求超时：后台任务期间用户可能不在页面上，至少给 5 分钟
                 confirmTimeoutMs = maxOf(cfg.timeoutMillis, 300_000L),
                 preferStream = cfg.stream,

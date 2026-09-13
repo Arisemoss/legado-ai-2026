@@ -143,7 +143,7 @@ class AgentRuntime(
 
             appendAssistant(messages, answerContent, calls)
             val increment = completion.usage?.totalTokens?.toLong()
-                ?: (256L + (completion.content?.length ?: 0) / 3L)
+                ?: estimateTokens(completion.content)
             billed += increment
             AiLog.i(
                 "Agent",
@@ -206,7 +206,7 @@ class AgentRuntime(
                                     argsPreview = previewArgs(res.args),
                                     detail = "写操作待确认…"
                                 )
-                                ctx.onConfirmRequested.value = ConfirmRequest(call.id, res.args)
+                                ctx.onConfirmRequested.tryEmit(ConfirmRequest(call.id, res.args))
                                 AiLog.w("Confirm", "写操作待确认: ${res.def.id} args=${previewArgs(res.args)}")
                                 val approved = awaitApproval(ctx, call.id)
                                 AiLog.i("Confirm", "${res.def.id} → ${if (approved) "用户同意" else "用户拒绝"}")
@@ -324,6 +324,24 @@ class AgentRuntime(
     private suspend fun awaitApproval(ctx: ToolContext, token: String): Boolean =
         // 共享总线上按 token 过滤；超时/停止均按拒绝处理
         ApprovalBus.await(token, confirmTimeoutMs) { ctx.stopRequested.value }?.second ?: false
+
+    /**
+     * 无 usage 时的兜底 token 估算（审计 B-2）：
+     * CJK 字符按 1 token/字、其余按 1 token/4 字符，另加固定开销。
+     * 原先 len/3 对中文低估约 3 倍，会让预算守卫失效。
+     */
+    private fun estimateTokens(text: String?): Long {
+        if (text.isNullOrEmpty()) return 256L
+        var cjk = 0
+        for (ch in text) {
+            val c = ch.code
+            if (c in 0x4E00..0x9FFF || c in 0x3400..0x4DBF || c in 0x3000..0x303F || c in 0xFF00..0xFFEF) {
+                cjk++
+            }
+        }
+        val other = text.length - cjk
+        return 256L + cjk + other / 4L
+    }
 
     private fun lastAnswer(messages: List<ChatMessage>): String {
         for (i in messages.indices.reversed()) {

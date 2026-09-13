@@ -195,6 +195,10 @@ object PreferKey {
     const val aiStream = "ai_stream"
     const val aiTimeout = "ai_timeout"
     const val aiMaxRounds = "ai_max_rounds"
+    const val aiMaxTokens = "ai_max_tokens"
+
+    // 安全（审计 H-4）：导出 ReaderProvider 是否允许外部 App 访问，默认关闭
+    const val allowExternalApi = "allow_external_api"
     const val aiSessionWindow = "ai_session_window"
     const val aiChatBgPath = "ai_chat_bg_path"
     const val aiChatBgOpacity = "ai_chat_bg_opacity"

@@ -62,9 +62,11 @@ object ModelManager {
 
     fun getConfig(): AiModelConfig {
         val prefs = appCtx
+        // 审计 M-8：兜底默认值改为国内可达的 DeepSeek（与首启向导默认服务商一致），
+        // 避免没有 pref 时默认 OpenAI 端点在国内不可达、首启即失败
         val baseUrl = prefs.prefStringSafe(PreferKey.aiBaseUrl)
-            ?: "https://api.openai.com/v1"
-        val model = prefs.prefStringSafe(PreferKey.aiModel) ?: "gpt-4o-mini"
+            ?: "https://api.deepseek.com/v1"
+        val model = prefs.prefStringSafe(PreferKey.aiModel) ?: "deepseek-chat"
         return AiModelConfig(
             name = model,
             baseUrl = baseUrl,
@@ -72,6 +74,7 @@ object ModelManager {
             stream = prefs.prefBooleanSafe(PreferKey.aiStream),
             timeoutMillis = prefs.prefStringSafe(PreferKey.aiTimeout)?.toLongOrNull() ?: 120_000L,
             maxRounds = prefs.prefStringSafe(PreferKey.aiMaxRounds)?.toIntOrNull() ?: 5,
+            maxTokens = prefs.prefStringSafe(PreferKey.aiMaxTokens)?.toIntOrNull() ?: 16_000,
             sessionWindow = prefs.prefStringSafe(PreferKey.aiSessionWindow)?.toIntOrNull() ?: 50,
             toolProtocol = prefs.prefStringSafe(PreferKey.aiToolProtocol, AiModelConfig.PROTOCOL_AUTO)
                 ?: AiModelConfig.PROTOCOL_AUTO

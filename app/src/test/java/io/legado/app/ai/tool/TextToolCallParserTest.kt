@@ -59,6 +59,18 @@ class TextToolCallParserTest {
     }
 
     @Test
+    fun `xml entities lt gt are decoded`() {
+        val r = TextToolCallParser.parse(
+            "<tool name=\"search_books\">" +
+                "<param name=\"keyword\">科幻 &lt;三体&gt; 解析 &amp; 赏析</param>" +
+                "</tool>"
+        )
+        assertEquals(1, r.calls.size)
+        // 注意：Gson 默认做 HTML 转义，断言解析后的值而不是原始 JSON 文本
+        assertEquals("科幻 <三体> 解析 & 赏析", args(r.calls[0]).get("keyword").asString)
+    }
+
+    @Test
     fun `no tags fast path returns content untouched`() {
         val text = "普通回答，没有工具调用。"
         val r = TextToolCallParser.parse(text)

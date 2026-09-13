@@ -155,7 +155,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         if (isFinishing || isDestroyed) return
         if (getPrefBoolean(PreferKey.aiSetupDone, false)) return
         if (getPrefBoolean(PreferKey.aiSetupShown, false)) return
-        if (!io.legado.app.ai.runtime.AiKeyStore.getApiKey().isNullOrBlank()) return
+        if (io.legado.app.ai.runtime.AiKeyStore.isConfigured()) return
         putPrefBoolean(PreferKey.aiSetupShown, true)
         startActivity(Intent(this, io.legado.app.ai.ui.AiSetupWizardActivity::class.java))
     }

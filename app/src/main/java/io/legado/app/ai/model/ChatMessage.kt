@@ -82,7 +82,8 @@ data class AiModelConfig(
     val baseUrl: String = "https://api.openai.com/v1",
     val apiKey: String = "",
     val temperature: Double = 0.7,
-    val maxTokens: Int = 4096,
+    /** Agent 单轮任务累计 token 预算（跨工具轮累加，超过即截断；审计 B-1） */
+    val maxTokens: Int = 16_000,
     val stream: Boolean = false,
     val timeoutMillis: Long = 120_000L,
     val maxRounds: Int = 5,
