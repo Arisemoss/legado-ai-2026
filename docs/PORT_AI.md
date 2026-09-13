@@ -15,7 +15,7 @@
 
 ## 验证证据（GitHub Actions）
 - 工作流：`.github/workflows/ai-port.yml`（push master/port-master 触发；matrix `[ai, app]`）。
-- 最新绿：commit `1a91244ede` → run [34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
+- 最新绿：commit `d7eac17306` → run [34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
 - 单测：`ai/model/AgentErrorTest`、`ai/runtime/OpenAIClientTest`、`ai/runtime/ApprovalBusTest`、`ai/tool/TextToolCallParserTest`、`ai/tool/SuggestionEngineTest`。
 
 ## 分支
@@ -67,4 +67,5 @@
 - 悬浮球：新增 `PreferKey.aiFloatBallScope`（both/reader/main）+ 设置项 + arrays；`refreshEnabled()` 按宿主页面过滤；宿主为 Activity 时不再加 `FLAG_ACTIVITY_NEW_TASK`。
 - 我的页入口图标改为 `ic_ai_assistant`（星芒）；空态快捷 chip 修复右缘裁切（`clipToPadding=false`）；建议按钮统一走 `@style/AiSuggestionChip`。
 - `MainActivity.handleRequestTab` 改为 `viewPagerMain.post {}` 后切页（修启动/返回瞬间 ViewPager 两页叠影）。
+- 验收：commit `d7eac17306` → AI Port Build [run 34732482928](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34732482928) ai/app 双 job 全绿。
 - 验收：commit `1a91244ede` → AI Port Build [run 34730836575](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34730836575) 双 job 全绿。
