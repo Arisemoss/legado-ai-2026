@@ -15,7 +15,7 @@
 
 ## 验证证据（GitHub Actions）
 - 工作流：`.github/workflows/ai-port.yml`（push master/port-master 触发；matrix `[ai, app]`）。
-- 最新绿：commit `eca3d3f87c` → run [34749930682](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34749930682)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
+- 最新绿：commit `926b65005a` → run [34750851104](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34750851104)：`testAiDebugUnitTest` + `assembleaiDebug` + `assembleappDebug` 全部 SUCCESS（ai/app 双 job）；产物 `ai-debug-apk`。
 - 单测：`ai/model/AgentErrorTest`、`ai/runtime/OpenAIClientTest`、`ai/runtime/ApprovalBusTest`、`ai/tool/TextToolCallParserTest`、`ai/tool/SuggestionEngineTest`。
 
 ## 分支
@@ -178,3 +178,4 @@
 
 ### 新增单测
 - ai/tool/impl/ToolArgParsingTest：boolArg 数字/字符串/兜底方向 + 服务商反查归一化（4 例）。
+- 验收：commit `926b65005a` → AI Port Build [run 34750851104](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34750851104) ai/app 双 job 全绿（三组子代理共 14 条结论，逐条核实后全部成立，无误报）。
