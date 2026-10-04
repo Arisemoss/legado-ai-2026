@@ -8,7 +8,9 @@ import io.legado.app.ai.model.AgentErrorCode
 import io.legado.app.ai.model.ChatMessage
 import io.legado.app.ai.model.ToolCall
 import io.legado.app.ai.model.Usage
+import io.legado.app.ai.model.httpStatusToErrorCode
 import io.legado.app.ai.log.AiLog
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -55,16 +57,18 @@ class OpenAIClient(
         val respBody = try {
             client.newCall(req).execute().use { resp ->
                 val text = resp.body?.string()
-                // 非 2xx 一律映射 AUTH_FAILED（与流式路径一致），避免被误判为可重试错误空转重试
+                // 按状态码分类：401/403 鉴权（不可重试）· 429 限流 · 5xx 服务端（可重试）
                 if (!resp.isSuccessful) {
                     throw AgentException(
-                        AgentErrorCode.AUTH_FAILED,
+                        httpStatusToErrorCode(resp.code),
                         "HTTP ${resp.code}: ${text?.take(200).orEmpty()}"
                     )
                 }
                 text
             }
         } catch (e: AgentException) {
+            throw e
+        } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             throw AgentException(AgentErrorCode.NETWORK_UNAVAILABLE, e.localizedMessage ?: "network error")
@@ -108,7 +112,7 @@ class OpenAIClient(
                 if (!resp.isSuccessful) {
                     AiLog.e("SSE", "HTTP ${resp.code}")
                     throw AgentException(
-                        AgentErrorCode.AUTH_FAILED,
+                        httpStatusToErrorCode(resp.code),
                         "HTTP ${resp.code}: ${respBody.string().take(200)}"
                     )
                 }
@@ -138,6 +142,8 @@ class OpenAIClient(
                 }
             }
         } catch (e: AgentException) {
+            throw e
+        } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             // 已有部分内容时视为提前结束（网络中断），否则按错误抛出

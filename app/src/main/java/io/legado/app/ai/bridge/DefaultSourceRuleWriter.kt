@@ -4,6 +4,7 @@ import io.legado.app.data.appDb
 import com.google.gson.Gson
 import com.google.gson.JsonParser
 import io.legado.app.ai.log.AiLog
+import io.legado.app.ai.util.runCatchingCancellable
 import io.legado.app.data.entities.BookSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -39,7 +40,7 @@ class DefaultSourceRuleWriter : SourceRuleWriter {
 
     override suspend fun apply(url: String, changes: Map<String, String>): Boolean =
         withContext(Dispatchers.IO) {
-            runCatching {
+            runCatchingCancellable {
                 val dao = appDb.bookSourceDao
                 val source = dao.getBookSource(url) ?: return@withContext false
                 val gson = Gson()

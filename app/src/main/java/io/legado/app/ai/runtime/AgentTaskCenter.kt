@@ -13,6 +13,7 @@ import io.legado.app.ai.AiPlatform
 import io.legado.app.ai.log.AiLog
 import io.legado.app.ai.model.ChatMessage
 import io.legado.app.ai.ui.AgentHubActivity
+import io.legado.app.ai.util.runCatchingCancellable
 import io.legado.app.constant.PreferKey
 import io.legado.app.ai.tool.ToolContext
 import io.legado.app.utils.getPrefString
@@ -101,9 +102,9 @@ object AgentTaskCenter {
             startedAt = System.currentTimeMillis()
         )
         job = scope.launch {
-            runCatching { conversation.appendText(sessionId, "user", prompt) }
+            runCatchingCancellable { conversation.appendText(sessionId, "user", prompt) }
 
-            val result = runCatching {
+            val result = runCatchingCancellable {
                 // Agent 循环内部是阻塞式 HTTP（OpenAIClient 同步 execute），必须离开主线程，
                 // 否则第一条消息就会 NetworkOnMainThreadException（Room 允许主线程查询，网络不允许）
                 withContext(Dispatchers.IO) {
@@ -121,7 +122,7 @@ object AgentTaskCenter {
                     else -> "（无回复）"
                 }
             }
-            runCatching { conversation.appendText(sessionId, "assistant", answer) }
+            runCatchingCancellable { conversation.appendText(sessionId, "assistant", answer) }
 
             snapshot = snapshot.copy(
                 state = result.state.toCenterState(),
@@ -132,7 +133,7 @@ object AgentTaskCenter {
             AiLog.i("Task", "任务结束 state=${result.state} rounds=${result.rounds} tokens=${result.tokensUsed}")
             notifyCompletionIfNeeded(prompt, result)
             listeners.forEach { l ->
-                runCatching { l.onTaskFinished(sessionId, prompt, result) }
+                runCatchingCancellable { l.onTaskFinished(sessionId, prompt, result) }
             }
         }
         return true
@@ -153,7 +154,7 @@ object AgentTaskCenter {
     private fun notifyCompletionIfNeeded(prompt: String, result: AgentResult) {
         val elapsed = System.currentTimeMillis() - snapshot.startedAt
         if (elapsed < 3_000L) return
-        runCatching {
+        runCatchingCancellable {
             val ctx = appCtx
             val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -178,6 +179,8 @@ object AgentTaskCenter {
                 .setContentText(text)
                 .setContentIntent(pi)
                 .setAutoCancel(true)
+                // 隐私：任务回答正文不在锁屏展示（解锁后才可见）
+                .setVisibility(NotificationCompat.VISIBILITY_SECRET)
                 .build()
             nm.notify(NOTIFY_ID, notification)
         }.onFailure { AiLog.e("Task", "完成通知发送失败", it) }

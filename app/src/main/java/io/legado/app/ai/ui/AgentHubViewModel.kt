@@ -12,6 +12,7 @@ import io.legado.app.ai.model.ToolEvent
 import io.legado.app.ai.runtime.AgentResult
 import io.legado.app.ai.runtime.AgentResultState
 import io.legado.app.ai.runtime.AgentTaskCenter
+import io.legado.app.ai.util.runCatchingCancellable
 import io.legado.app.ai.runtime.ConversationService
 import io.legado.app.ai.runtime.SystemPromptBuilder
 import io.legado.app.ai.skill.SkillRegistry
@@ -187,7 +188,7 @@ class AgentHubViewModel(
     suspend fun init() {
         refreshStatusLine()
         refreshSessions()
-        val latest = runCatching {
+        val latest = runCatchingCancellable {
             appDb.aiSessionDao.getAll()
         }.getOrNull() ?: emptyList()
 
@@ -198,7 +199,7 @@ class AgentHubViewModel(
 
     /** 拉取会话列表（事件驱动：在会话增删/切换/回答完成后调用，替代高频轮询） */
     suspend fun refreshSessions() {
-        runCatching { appDb.aiSessionDao.getAll() }.getOrNull()?.let { sessions.value = it }
+        runCatchingCancellable { appDb.aiSessionDao.getAll() }.getOrNull()?.let { sessions.value = it }
     }
 
     // ---------- 会话管理 ----------
@@ -369,7 +370,7 @@ class AgentHubViewModel(
         if (currentTitle != "新会话") return
         currentTitle = text.take(16)
         scope?.launch {
-            runCatching { conversation.rename(sid, currentTitle) }
+            runCatchingCancellable { conversation.rename(sid, currentTitle) }
             refreshSessions()
         }
     }

@@ -10,6 +10,7 @@ import io.legado.app.ai.model.ToolResult
 import io.legado.app.ai.model.ToolResultState
 import io.legado.app.ai.tool.ToolContext
 import io.legado.app.ai.tool.ToolRegistry
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -93,6 +94,12 @@ class ToolExecutor(
                     state = ToolResultState.OK,
                     error = AgentError(e.code, e.message ?: "tool error")
                 )
+            } catch (e: CancellationException) {
+                // 取消必须向上传播：本 catch 若落在通用 Exception 分支，
+                // ① 会吞掉调用方的 scope 取消；
+                // ② 会吞掉 withTimeoutOrNull 的超时异常（TimeoutCancellationException），
+                //    使上方 45s 超时安全网永不生效（超时被误报为「工具失败」）。
+                throw e
             } catch (e: Exception) {
                 AiLog.e("Tool", "${def.id} 异常", e)
                 // 审计 B-3：IO/网络类异常才可重试；参数/解析等确定性异常不再空转重试

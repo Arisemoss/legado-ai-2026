@@ -1,5 +1,6 @@
 package io.legado.app.ai.source
 
+import io.legado.app.ai.util.runCatchingCancellable
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
 import io.legado.app.model.webBook.WebBook
@@ -43,8 +44,11 @@ object SourceHealth {
             return@withContext Result(source, false, 0L, "未配置搜索 URL")
         }
         val start = System.currentTimeMillis()
+        // 注意：必须用 runCatchingCancellable —— 普通 runCatching 会吞掉
+        // TimeoutCancellationException（超时）与外部取消，导致超时分支永不生效、
+        // 「停止检测」把进行中的源误报为「失效」。
         val r = withTimeoutOrNull(TIMEOUT_MS) {
-            runCatching { WebBook.searchBookAwait(source, "我的", 1) }
+            runCatchingCancellable { WebBook.searchBookAwait(source, "我的", 1) }
         }
         val cost = System.currentTimeMillis() - start
         when {

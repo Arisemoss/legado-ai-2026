@@ -1,6 +1,7 @@
 package io.legado.app.ai.source
 
 import io.legado.app.ai.log.AiLog
+import io.legado.app.ai.util.runCatchingCancellable
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
 import io.legado.app.help.http.okHttpClient
@@ -39,7 +40,7 @@ object BookSourceHub {
      */
     suspend fun fetchEntries(pageUrl: String = DEFAULT_PAGE): Result<List<Entry>> =
         withContext(Dispatchers.IO) {
-            runCatching {
+            runCatchingCancellable {
                 val html = downloadTextBlocking(pageUrl)
                 linkRegex.findAll(html).map { m ->
                     val raw = m.groupValues[1]
@@ -51,7 +52,7 @@ object BookSourceHub {
 
     /** 下载单个书源地址（JSON 数组 / 每行一个 JSON 的 TXT）并入库（IO 线程） */
     suspend fun importUrl(src: String): Result<Int> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingCancellable {
         val text = downloadTextBlocking(src)
         val sources = parseSources(text)
         if (sources.isEmpty()) throw RuntimeException("未解析到书源")
@@ -148,7 +149,7 @@ object BookSourceHub {
 
     /** 预扫描：解析条目内书源数量/更新时间，并判断本地是否已存在、是否可更新（IO 线程） */
     suspend fun scan(entry: Entry): ScanResult = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingCancellable {
         val text = downloadText(entry.src)
         val list = parseSources(text)
         val newest = list.maxOfOrNull { it.lastUpdateTime } ?: 0L

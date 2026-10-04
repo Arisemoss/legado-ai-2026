@@ -17,6 +17,7 @@ import io.legado.app.ai.tool.TextToolCallParser
 import io.legado.app.ai.tool.ToolContext
 import io.legado.app.ai.tool.ToolRegistry
 import com.google.gson.Gson
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -230,6 +231,9 @@ class AgentRuntime(
                                 val finalResult = if (approved) {
                                     try {
                                         res.def.onApproved(ctx, res.args)
+                                    } catch (e: CancellationException) {
+                                        // 取消不得被包装成「写入失败」回喂模型（会误导其重试写入）
+                                        throw e
                                     } catch (e: Exception) {
                                         AiLog.e("Confirm", "${res.def.id} 写入失败", e)
                                         postEvent(
