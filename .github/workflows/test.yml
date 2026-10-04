@@ -281,7 +281,7 @@ jobs:
           done
           rm -rf */
       - name: Post to channel
-        uses: xireiki/channel-post@v1
+        uses: xireiki/channel-post@v2
         with:
           chat_id: ${{ secrets.CHANNEL_ID }}
           bot_token: ${{ secrets.BOT_TOKEN }}
