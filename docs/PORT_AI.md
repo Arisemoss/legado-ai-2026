@@ -179,3 +179,44 @@
 ### 新增单测
 - ai/tool/impl/ToolArgParsingTest：boolArg 数字/字符串/兜底方向 + 服务商反查归一化（4 例）。
 - 验收：commit `926b65005a` → AI Port Build [run 34750851104](https://github.com/Arisemoss/legado-ai-2026/actions/runs/34750851104) ai/app 双 job 全绿（三组子代理共 14 条结论，逐条核实后全部成立，无误报）。
+
+## 第十三批修复（AI 层取消语义统一 + HTTP 错误分类，2026-10）
+
+### 核心问题
+`runCatching {}` 与 `catch (e: Exception)` 都会捕获 `CancellationException`
+（它继承自 `IllegalStateException` → `Exception`），造成两类后果：
+1. **取消被谎报为失败**：调用方/scope 取消后任务不中断，仍继续写库、发通知；
+2. **超时安全网失效**：`withTimeoutOrNull` 抛出的 `TimeoutCancellationException`
+   先被内层 `runCatching`/`catch(Exception)` 吞掉，超时分支永不进入，
+   「超时」被误报为「请求失败 / 工具失败 / 扫描失败」。
+
+桥接层已在第十二批修好 3 处（`AiBridgeImpl`），但**运行时/工具/书源/UI 层从未同步**——本批补齐。
+
+### 修复内容
+- 新增 `ai/util/CancellationSafe.kt`：`runCatchingCancellable {}` —— 与 `runCatching` 同形，
+  但 `CancellationException` 原样抛出。约定：**凡包裹 suspend 调用一律用它**。
+- `runtime/AgentTaskCenter.kt`：主流程 `runtime.execute`、会话落库、完成回调、通知统一改用之；
+  **取消后不再继续执行后续写库/通知**。
+- `runtime/ToolExecutor.kt`：`catch` 前置 `CancellationException` —— 同时修复
+  **45s 工具超时安全网彻底失效**的问题（超时不再被收敛成 TOOL_FAILED）。
+- `runtime/AgentRuntime.kt`：`onApproved` 写路径取消不再被包装成「写入失败」回喂模型。
+- `source/SourceHealth.kt`：点「停止检测」不再把进行中的源误报为「失效」（超时分支恢复生效）。
+- `source/BookSourceHub.kt`：扫描/导入/取列表取消不再被报成「扫描失败」。
+- `ui/AgentHubViewModel.kt`、`bridge/DefaultSourceRuleWriter.kt`：同型点一并修复。
+- `runtime/OpenAIClient.kt`：**非 2xx 按状态码分类** —— 401/403 鉴权（不可重试）、
+  429 限流（可重试）、5xx 服务端（可重试）、其余 4xx 确定性失败；新增错误码 `RATE_LIMITED`；
+  并补取消重抛（取消/超时不再被转成可重试的网络错误而空转）。
+- `runtime/AgentTaskCenter.kt`：完成通知增加 `VISIBILITY_SECRET`（锁屏不展示回答正文）。
+
+### 新增单测
+- `ai/util/CancellationSafeTest`：取消必须抛出、普通异常收敛为 failure、子类同样抛出（4 例）。
+- `ai/model/HttpErrorClassifyTest`：401/403/429/5xx/其余 4xx 分类与 retryable 断言（4 例）。
+
+- 验收：commit `d06d442` → AI Port Build [run 37204820376](https://github.com/Arisemoss/legado-ai-2026/actions/runs/37204820376)（`testAiDebugUnitTest` + assembleAiDebug/assembleAppDebug 双 job 全绿）、
+  Test Build [run 37204820347](https://github.com/Arisemoss/legado-ai-2026/actions/runs/37204820347)（app release/releaseA 全绿）。
+
+### 相关发现（未在本批修复，建议后续处理）
+- README 缺少「第十二批」小节（PORT_AI 有）；README 称「剩余接线项见代码内 TODO」但 `ai/` 下 **0 个 TODO**；
+  README「44 文件」为导入时数量，现 AI 层已 58 文件。
+- `app/schemas/.../AppDatabase/76.json` 仍未入库。
+- `.github/workflows/legado.jks` 已从工作区删除，但仍存在于 git 历史，**需在 GitHub 侧轮换签名密钥**。
